@@ -1,40 +1,81 @@
 document.addEventListener("DOMContentLoaded", function () {
-  const apiInput = document.getElementById("apiKey"); // ✅ FIXED
+  const apiInput = document.getElementById("apiKey");
   const toneDropdown = document.getElementById("tone");
+  const modalToneSelect = document.getElementById("modalTone");
+  const emojiSelect = document.getElementById("emoji");
   const commentBoxes = document.querySelectorAll(".comment-box span");
   const dmBox = document.querySelector(".dm-box span");
   const regenerateBtn = document.getElementById("regenerate");
   const copyBtn = document.getElementById("copy");
-  const toneSelect = document.getElementById("tone");
-  const emojiSelect = document.getElementById("emoji");
 
-  // ✅ Load API Key from chrome.storage.local
-  if (apiInput) {
-    chrome.storage.local.get("vibeOpenAIKey", (result) => {
-      apiInput.value = result.vibeOpenAIKey || "";
+  const emojiMap = {
+    "Smart Contrarian": "🤔",
+    "Agreement with Value": "✅",
+    "Ask a Question": "❓",
+    Friendly: "💬",
+    Celebratory: "🎉",
+    Constructive: "🛠️",
+  };
+
+  // ✅ Load saved values (API key, tone, emoji)
+  chrome.storage.local.get(
+    ["vibeOpenAIKey", "vibeTone", "vibeEmoji"],
+    (result) => {
+      if (apiInput) apiInput.value = result.vibeOpenAIKey || "";
+      const tone = result.vibeTone || "Smart Contrarian";
+      const emoji = result.vibeEmoji || emojiMap[tone] || "💬";
+      if (toneDropdown) toneDropdown.value = tone;
+      if (modalToneSelect) modalToneSelect.value = tone;
+      if (emojiSelect) emojiSelect.value = emoji;
+
+      updateSuggestions();
+    }
+  );
+
+  // ✅ Save API Key
+  apiInput?.addEventListener("change", (e) => {
+    chrome.storage.local.set({ vibeOpenAIKey: e.target.value }, () => {
+      console.log("✅ API Key saved");
+    });
+  });
+
+  // ✅ Sync tone from main dropdown
+  toneDropdown?.addEventListener("change", () => {
+    const selectedTone = toneDropdown.value;
+    const selectedEmoji = emojiMap[selectedTone] || "💬";
+
+    emojiSelect.value = selectedEmoji;
+    if (modalToneSelect) modalToneSelect.value = selectedTone;
+
+    chrome.storage.local.set({
+      vibeTone: selectedTone,
+      vibeEmoji: selectedEmoji,
     });
 
-    // ✅ Save to chrome.storage.local when changed
-    apiInput.addEventListener("change", (e) => {
-      const newKey = e.target.value;
-      chrome.storage.local.set({ vibeOpenAIKey: newKey }, () => {
-        console.log("✅ API Key saved to chrome.storage.local");
-      });
-    });
-  }
+    updateSuggestions();
+  });
 
-  // ✅ Load & save tone and emoji using localStorage
-  if (toneSelect && emojiSelect) {
-    toneSelect.value = localStorage.getItem("vibeTone") || "Smart Contrarian";
-    emojiSelect.value = localStorage.getItem("vibeEmoji") || "None";
+  // ✅ Sync tone from modal dropdown
+  modalToneSelect?.addEventListener("change", (e) => {
+    const newTone = e.target.value;
 
-    [toneSelect, emojiSelect].forEach((el) => {
-      el.addEventListener("change", () => {
-        localStorage.setItem("vibeTone", toneSelect.value);
-        localStorage.setItem("vibeEmoji", emojiSelect.value);
-      });
+    toneDropdown.value = newTone;
+    emojiSelect.value = emojiMap[newTone] || "💬";
+
+    chrome.storage.local.set({
+      vibeTone: newTone,
+      vibeEmoji: emojiSelect.value,
     });
-  }
+
+    updateSuggestions();
+  });
+
+  // ✅ Save emoji if changed manually
+  emojiSelect?.addEventListener("change", () => {
+    chrome.storage.local.set({
+      vibeEmoji: emojiSelect.value,
+    });
+  });
 
   function getMockSuggestions(tone) {
     switch (tone) {
@@ -62,6 +103,30 @@ document.addEventListener("DOMContentLoaded", function () {
           ],
           dm: "Hey, your post caught my attention. Curious what led to that insight. Let me know if you are open to connect.",
         };
+      case "Friendly":
+        return {
+          comments: [
+            "This is such great news. Congratulations!",
+            "Love the positive energy here. Wishing you the best!",
+          ],
+          dm: "Hi! Just read your post. Congrats and best wishes!",
+        };
+      case "Celebratory":
+        return {
+          comments: [
+            "Huge win! Your hard work is clearly paying off 🎉",
+            "Awesome moment—enjoy the success 🥳",
+          ],
+          dm: "This deserves a celebration! Sending best wishes.",
+        };
+      case "Constructive":
+        return {
+          comments: [
+            "Interesting points raised. How do you address scalability?",
+            "Curious—what's the fallback if X doesn't work?",
+          ],
+          dm: "I liked your take and had a few thoughts. Would love to connect!",
+        };
       default:
         return {
           comments: ["This is a good insight.", "Helpful to think about."],
@@ -81,15 +146,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (dmBox) dmBox.textContent = suggestions.dm || "No DM";
   }
 
+  // ✅ Regenerate suggestions
   regenerateBtn?.addEventListener("click", updateSuggestions);
-  toneDropdown?.addEventListener("change", updateSuggestions);
 
+  // ✅ Copy all
   copyBtn?.addEventListener("click", () => {
     const text = Array.from(
       document.querySelectorAll(".comment-box span, .dm-box span")
     )
       .map((el) => el.textContent)
       .join("\n\n");
+
     navigator.clipboard.writeText(text).then(() => {
       copyBtn.textContent = "Copied!";
       setTimeout(() => {
@@ -98,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // ✅ Copy one
   document.querySelectorAll(".copy-one").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const text = e.target.parentNode.querySelector("span").textContent;
@@ -109,6 +177,4 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
   });
-
-  updateSuggestions();
 });

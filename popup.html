@@ -29,12 +29,14 @@
     </style>
   </head>
   <body>
+    <!-- 🔑 API Key Input -->
     <div style="margin-bottom: 10px">
       <label for="apiKey">OpenAI API Key:</label><br />
       <input type="text" id="apiKey" placeholder="sk-..." style="width: 100%" />
       <div id="saveStatus" style="color: green; font-size: 12px"></div>
     </div>
 
+    <!-- 🧠 Mode Toggle (future use) -->
     <div style="margin-bottom: 10px">
       <label for="modeToggle">
         <input type="checkbox" id="modeToggle" />
@@ -42,15 +44,45 @@
       </label>
     </div>
 
+    <!-- 🎯 Global Tone Selector (optional) -->
     <div class="section">
       <label for="tone">🎯 Select Tone:</label>
-      <select id="tone">
+      <select id="tone" style="width: 100%">
         <option>Smart Contrarian</option>
         <option>Agreement with Value</option>
         <option>Ask a Question</option>
+        <option>Friendly</option>
+        <option>Celebratory</option>
+        <option>Constructive</option>
       </select>
     </div>
 
+    <!-- 😎 Emoji Selector -->
+    <div class="section">
+      <label for="emoji">💡 Pick Emoji Style:</label>
+      <select id="emoji" style="width: 100%">
+        <option value="💬">💬</option>
+        <option value="🔥">🔥</option>
+        <option value="🚀">🚀</option>
+        <option value="🤔">🤔</option>
+        <option value="✅">✅</option>
+      </select>
+    </div>
+
+    <!-- 🎯 Tone Change Dropdown in Modal Area -->
+    <div class="section">
+      <label for="modalTone" style="font-weight: bold">🎯 Change Tone:</label>
+      <select id="modalTone" style="width: 100%; padding: 4px; margin-top: 4px">
+        <option value="Smart Contrarian">🤔 Smart Contrarian</option>
+        <option value="Agreement with Value">✅ Agreement with Value</option>
+        <option value="Ask a Question">❓ Ask a Question</option>
+        <option value="Friendly">💬 Friendly</option>
+        <option value="Celebratory">🎉 Celebratory</option>
+        <option value="Constructive">🛠️ Constructive</option>
+      </select>
+    </div>
+
+    <!-- 💬 Suggestion Boxes -->
     <div class="section">
       <div class="comment-box">
         <span>Comment 1</span> <button class="copy-one">📋</button>
@@ -63,11 +95,50 @@
       </div>
     </div>
 
+    <!-- 🔁 Buttons -->
     <div class="section">
       <button id="regenerate">🔄 Regenerate</button>
       <button id="copy">📋 Copy All</button>
     </div>
 
+    <!-- 🔌 Script -->
     <script src="popup.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const modalToneSelect = document.getElementById("modalTone");
+        const toneDropdown = document.getElementById("tone");
+        const emojiSelect = document.getElementById("emoji");
+
+        const emojiMap = {
+          "Smart Contrarian": "🤔",
+          "Agreement with Value": "✅",
+          "Ask a Question": "❓",
+          Friendly: "💬",
+          Celebratory: "🎉",
+          Constructive: "🛠️",
+        };
+
+        modalToneSelect?.addEventListener("change", (e) => {
+          const newTone = e.target.value;
+
+          // Sync popup tone dropdown
+          if (toneDropdown) toneDropdown.value = newTone;
+
+          // Update emoji based on tone
+          if (emojiSelect) emojiSelect.value = emojiMap[newTone] || "💬";
+
+          // Save to Chrome storage
+          chrome.storage.local.set({
+            vibeTone: newTone,
+            vibeEmoji: emojiSelect.value,
+          });
+
+          // Update suggestions if available
+          if (typeof updateSuggestions === "function") {
+            updateSuggestions();
+          }
+        });
+      });
+    </script>
   </body>
 </html>
