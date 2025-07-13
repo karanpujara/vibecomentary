@@ -28,7 +28,6 @@
 
       button {
         padding: 8px 12px;
-        background-color: #2d8cff;
         border: none;
         border-radius: 4px;
         color: white;
@@ -36,10 +35,22 @@
         margin-right: 8px;
       }
 
+      .save-btn {
+        background-color: #2d8cff;
+      }
+
+      .reset-btn {
+        background-color: gray;
+      }
+
       .info {
         font-size: 12px;
         color: #555;
         margin-top: 10px;
+      }
+
+      hr {
+        margin: 20px 0;
       }
     </style>
   </head>
@@ -49,12 +60,23 @@
     <textarea id="apiKey" placeholder="sk-..."></textarea>
 
     <div>
-      <button id="saveKey">Save</button>
-      <button id="clearKey">Remove</button>
+      <button id="saveKey" class="save-btn">Save</button>
+      <button id="clearKey" class="reset-btn">Remove</button>
     </div>
 
     <div class="info">
       Your key is only stored inside this browser. We never send it anywhere.
+    </div>
+
+    <hr />
+
+    <h4>🎯 Tone Training (Customize Comment Instructions)</h4>
+
+    <div id="tonePromptsContainer"></div>
+
+    <div>
+      <button id="savePrompts" class="save-btn">💾 Save Prompts</button>
+      <button id="resetPrompts" class="reset-btn">🧹 Reset All</button>
     </div>
 
     <script src="settings.js"></script>

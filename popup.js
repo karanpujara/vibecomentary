@@ -110,5 +110,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  document.getElementById("openSettings").addEventListener("click", () => {
+    chrome.runtime.openOptionsPage().catch((err) => console.error(err));
+  });
+
   updateSuggestions();
 });
