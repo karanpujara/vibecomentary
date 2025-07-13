@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "VibeCommentary",
+  "version": "1.0",
+  "description": "Suggest engaging LinkedIn comments with AI.",
+  "permissions": ["scripting", "activeTab", "storage"], // <-- ADD storage here
+  "host_permissions": ["https://www.linkedin.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.linkedin.com/feed/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  }
+}
