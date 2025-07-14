@@ -67,6 +67,13 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
       Friendly: `Write 2 friendly and encouraging comments as if responding to a friend. Keep it human and casual.`,
       Celebratory: `Write 2 congratulatory comments that sound genuine and energetic, suitable for posts like promotions or achievements.`,
       Constructive: `Write 2 comments that offer polite suggestions or additional resources in a helpful tone.`,
+      "Offer Help": `Write 2 comments that offer genuine help or support based on the post content. Be specific and sincere.`,
+      Contribution: `Write 2 comments that contribute a fresh angle, useful resource, or related insight to enrich the discussion.`,
+      "Disagreement - Contrary": `Write 2 respectful comments that disagree with the post and back up a different viewpoint with logic or evidence.`,
+      Criticism: `Write 2 polite and professional criticisms that point out potential gaps, risks, or flaws in the post.`,
+      "Funny Sarcastic": `Write 2 comments that are playful, witty, or sarcastic without being offensive. Make it feel clever.`,
+      "Perspective (Why / What / How)": `Write 2 comments that add thoughtful "why", "what", or "how" perspectives to the topic. Encourage deeper thinking.`,
+      "Professional Industry Specific": `Write 2 comments that sound like an expert in the same industry. Use relevant terms and insights.`,
     };
 
     const defaultToneGuidelines = {
@@ -76,25 +83,30 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
       Friendly: `- Use a casual tone and mention something specific you liked.\n- Start with \${firstNameWithPrefix}.\n- Keep it short and warm.`,
       Celebratory: `- Use an enthusiastic tone.\n- Start with \${firstNameWithPrefix}.\n- Celebrate the achievement naturally.`,
       Constructive: `- Offer a helpful suggestion without sounding critical.\n- Start with \${firstNameWithPrefix}.\n- Be kind and relevant.`,
+      "Offer Help": `- Be supportive and generous.\n- Mention something specific you can help with.\n- Start with \${firstNameWithPrefix} or "Happy to help!"`,
+      Contribution: `- Share a link, idea, or resource.\n- Add your perspective briefly.\n- Start by agreeing or building on \${firstNameWithPrefix}’s thought.`,
+      "Disagreement - Contrary": `- Be respectful but bold.\n- Use facts or reasoning.\n- Mention \${firstNameWithPrefix} by name when disagreeing.`,
+      Criticism: `- Keep it constructive and avoid harsh language.\n- Point out a flaw or missing piece politely.\n- Mention \${firstNameWithPrefix} respectfully.`,
+      "Funny Sarcastic": `- Add humor, puns, or playful exaggeration.\n- Keep it lighthearted.\n- Tag \${firstNameWithPrefix} for effect.`,
+      "Perspective (Why / What / How)": `- Ask a "why", "what", or "how" style question.\n- Expand the conversation intellectually.\n- Mention \${firstNameWithPrefix} at start.`,
+      "Professional Industry Specific": `- Use domain language and examples.\n- Mention trends or stats.\n- Begin with \${firstNameWithPrefix} to make it direct.`,
     };
 
     const customPrompt = res.tonePrompts?.[tone]?.trim();
     const customGuidelineRaw = res.toneGuidelines?.[tone]?.trim();
 
-    let firstNameWithPrefix = "the author";
     let fullName = "";
-
+    if (!postEl) {
+      postEl = document.querySelector("[data-vibe-post]");
+    }
     if (postEl) {
-      const nameElem =
-        postEl.querySelector(".update-components-actor__title span span") ||
-        postEl.querySelector(".feed-shared-actor__name");
-
+      const nameElem = postEl.querySelector(".feed-shared-actor__name");
       if (nameElem) fullName = nameElem.innerText.trim();
     }
 
+    let firstNameWithPrefix = "the author";
     const knownPrefixes = ["Dr.", "Mr.", "Ms.", "Mrs.", "Prof."];
     const nameParts = fullName.split(" ").filter(Boolean);
-
     if (nameParts.length > 0) {
       if (knownPrefixes.includes(nameParts[0])) {
         firstNameWithPrefix = `${nameParts[0]} ${nameParts[1] || ""}`.trim();
@@ -114,7 +126,7 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
       ""
     ).replace(/\$\{firstNameWithPrefix\}/g, firstNameWithPrefix);
 
-    const prompt = `${tonePrompt}
+    const finalPrompt = `${tonePrompt}
 
 Guidelines:
 ${toneGuideline}
@@ -137,7 +149,7 @@ Post:
           },
           body: JSON.stringify({
             model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: prompt }],
+            messages: [{ role: "user", content: finalPrompt }],
             temperature: 0.7,
           }),
         }),
@@ -172,17 +184,6 @@ Post:
       const dmSuggestion =
         dmData.choices?.[0]?.message?.content || "No DM suggestion found.";
 
-      // Optional: flag fallback to "The author"
-      if (
-        comments.some(
-          (c) => c.startsWith("The author") || c.includes("The author")
-        )
-      ) {
-        console.warn(
-          "⚠️ One or more comments used fallback 'The author'. Check prompt/guideline injection."
-        );
-      }
-
       showVibeModal(`${emoji} ${tone}`, comments, dmSuggestion);
     } catch (err) {
       console.error("❌ OpenAI error", err);
@@ -209,8 +210,32 @@ function showVibeModal(toneLabel, comments, dmSuggestion, isLoading = false) {
         <button id="vibe-close" style="border:none; background:none; font-size:18px; cursor:pointer;">✖</button>
       </div>
 
-      <div style="margin-bottom:12px;">
-        <label for="modalTone">🎯 Change Tone:</label>
+
+      <!-- ✍️ Improve Your Own Comment -->
+      <!-- Improve Comment Section -->
+      <div style="margin-bottom: 20px;">
+        <label style="font-weight: bold;">✍️ Write your comment (optional)</label>
+        <textarea id="manualCommentInput" placeholder="Type your comment here..." style="width: 100%; height: 80px; padding: 8px; margin-top: 6px; border-radius: 6px; border: 1px solid #ccc;"></textarea>
+
+        <button id="improveCommentBtn" style="margin-top: 8px; background-color: #2d8cff; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">✨ Improve</button>
+
+        <div id="improveLoader" style="display: none; margin-top: 10px;">
+          <span style="font-size: 12px;">⏳ Improving...</span>
+        </div>
+      </div>
+
+      <!-- Improved Comment Output -->
+      <div id="improvedCommentBox" style="display:none; background: #f3f3f3; padding: 10px; border-radius: 6px; border: 1px solid #ccc; margin-bottom: 16px;">
+        <strong>✅ Improved Version:</strong>
+        <p id="improvedCommentText" style="margin-top: 8px;"></p>
+        <button id="copyImprovedBtn" style="background-color: gray; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">📋 Copy</button>
+      </div>
+
+
+    <!-- 🎯 Change Tone (move below this block) -->
+    <div style="margin-bottom:12px;">
+      <label for="modalTone">🎯 Change Tone:</label>
+
         <select id="modalTone" style="width: 100%; padding: 4px; margin-top: 4px;">
           <option value="Smart Contrarian">Smart Contrarian</option>
           <option value="Agreement with Value">Agreement with Value</option>
@@ -218,6 +243,13 @@ function showVibeModal(toneLabel, comments, dmSuggestion, isLoading = false) {
           <option value="Friendly">Friendly</option>
           <option value="Celebratory">Celebratory</option>
           <option value="Constructive">Constructive</option>
+          <option value="Offer Help">Offer Help</option>
+          <option value="Contribution">Contribution</option>
+          <option value="Disagreement - Contrary">Disagreement - Contrary</option>
+          <option value="Criticism">Criticism</option>
+          <option value="Funny Sarcastic">Funny Sarcastic</option>
+          <option value="Perspective (Why / What / How)">Perspective (Why / What / How)</option>
+          <option value="Professional Industry Specific">Professional Industry Specific</option>
         </select>
       </div>
 
@@ -286,6 +318,105 @@ function showVibeModal(toneLabel, comments, dmSuggestion, isLoading = false) {
 
   document.getElementById("vibe-close").onclick = () => modal.remove();
 
+  // ✨ Handle Improve button click
+  const improveBtn = document.getElementById("improveCommentBtn");
+  if (improveBtn) {
+    improveBtn.addEventListener("click", async () => {
+      const manualText = document
+        .getElementById("manualCommentInput")
+        .value.trim();
+      const tone = "Improve";
+
+      if (!manualText) {
+        alert("✍️ Please write something first.");
+        return;
+      }
+
+      const storage = await chrome.storage.local.get([
+        "tonePrompts",
+        "toneGuidelines",
+        "vibeOpenAIKey",
+      ]);
+      const apiKey = storage.vibeOpenAIKey;
+
+      if (!apiKey) {
+        alert("🚫 Missing API key. Please set it in Settings.");
+        return;
+      }
+
+      const defaultImprovePrompt = `Improve this comment and make it more thoughtful, clearer, and better suited for a professional conversation on LinkedIn.`;
+      const defaultImproveGuideline = `- Rewrite the comment to sound clearer, more articulate.\n- Maintain the same idea and emotion.\n- Make it suitable for professional platforms.`;
+
+      const prompt = (
+        storage.tonePrompts?.[tone] ||
+        (tone === "Improve" ? defaultImprovePrompt : "")
+      ).trim();
+
+      const guidelineRaw = (
+        storage.toneGuidelines?.[tone] ||
+        (tone === "Improve" ? defaultImproveGuideline : "")
+      ).trim();
+
+      // Optional: dynamic name replacement
+      let firstNameWithPrefix = "the author";
+      const nameElem = activePostElement?.querySelector(
+        ".feed-shared-actor__name"
+      );
+      if (nameElem) {
+        const nameParts = nameElem.innerText.trim().split(" ");
+        const knownPrefixes = ["Dr.", "Mr.", "Ms.", "Mrs.", "Prof."];
+        if (knownPrefixes.includes(nameParts[0])) {
+          firstNameWithPrefix = `${nameParts[0]} ${nameParts[1] || ""}`.trim();
+        } else {
+          firstNameWithPrefix = nameParts[0];
+        }
+      }
+      const guideline = guidelineRaw.replace(
+        /\$\{firstNameWithPrefix\}/g,
+        firstNameWithPrefix
+      );
+
+      const fullPrompt = `${prompt}\n\nGuidelines:\n${guideline}\n\nHere is my comment:\n"${manualText}"\n\nImprove it:`;
+
+      try {
+        const response = await fetch(
+          "https://api.openai.com/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+              model: "gpt-3.5-turbo",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a helpful writing assistant.",
+                },
+                { role: "user", content: fullPrompt },
+              ],
+              temperature: 0.7,
+            }),
+          }
+        );
+
+        const data = await response.json();
+        const improved = data.choices?.[0]?.message?.content?.trim();
+
+        if (improved) {
+          document.getElementById("improvedCommentBox").style.display = "block";
+          document.getElementById("improvedCommentText").innerText = improved;
+        } else {
+          alert("⚠️ No improvement generated.");
+        }
+      } catch (err) {
+        console.error("🧨 Improve failed:", err);
+        alert("Something went wrong. Check console.");
+      }
+    });
+  }
+
   if (!isLoading) {
     modal.querySelectorAll(".copy-btn").forEach((btn) => {
       btn.onclick = () => {
@@ -302,6 +433,21 @@ function showVibeModal(toneLabel, comments, dmSuggestion, isLoading = false) {
       btn.innerText = "✅ Copied!";
       setTimeout(() => (btn.innerText = "📋 Copy DM"), 1500);
     };
+
+    // 📋 Copy Improved Comment
+    const copyImprovedBtn = document.getElementById("copyImprovedBtn");
+    if (copyImprovedBtn) {
+      copyImprovedBtn.onclick = () => {
+        const improvedText = document.getElementById(
+          "improvedCommentText"
+        ).innerText;
+        navigator.clipboard.writeText(improvedText);
+        copyImprovedBtn.innerText = "✅ Copied!";
+        setTimeout(() => {
+          copyImprovedBtn.innerText = "📋 Copy";
+        }, 1500);
+      };
+    }
   }
 
   document.getElementById("modalTone").onchange = (e) => {
