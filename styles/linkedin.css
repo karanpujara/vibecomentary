@@ -1,0 +1,83 @@
+/* LinkedIn-specific styles */
+
+/* LinkedIn button styling */
+.linkedin .vibe-btn {
+  background-color: #0073b1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  z-index: 1000;
+}
+
+.linkedin .vibe-btn:hover {
+  background-color: #005a8b;
+}
+
+/* LinkedIn modal positioning */
+.linkedin #vibe-modal {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  top: auto;
+  left: auto;
+  transform: none;
+  width: 420px;
+  max-height: 80vh;
+}
+
+/* LinkedIn-specific content styling */
+.linkedin .vibe-comment {
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.linkedin .dm-section {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.linkedin .dm-section > div:first-child {
+  color: #856404;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* LinkedIn tone section */
+.linkedin .tone-section {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+/* LinkedIn improve section */
+.linkedin .improve-section {
+  background: #f3e5f5;
+  border: 1px solid #e1bee7;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 20px;
+}
+
+/* LinkedIn responsive adjustments */
+@media (max-width: 768px) {
+  .linkedin #vibe-modal {
+    bottom: 20px;
+    right: 20px;
+    width: calc(100vw - 40px);
+    max-width: 400px;
+  }
+}

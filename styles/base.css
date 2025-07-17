@@ -1,0 +1,409 @@
+/* Base styles for all platforms */
+
+/* Modal Container */
+#vibe-modal {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  z-index: 999999;
+  background: white;
+  border: 2px solid #0073b1;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  max-height: 80vh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Modal Header */
+.vibe-modal-content .vibe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+#tone-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+#vibe-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #333;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+#vibe-close:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+/* Section Styling */
+.improve-section,
+.tone-section,
+.vibe-comment,
+.dm-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+/* Labels */
+label {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Form Elements */
+textarea,
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: #0073b1;
+  box-shadow: 0 0 0 2px rgba(0, 115, 177, 0.2);
+}
+
+/* Prevent blue border during drag */
+#vibe-modal.dragging * {
+  outline: none !important;
+  border-color: #ccc !important;
+  box-shadow: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+#vibe-modal.dragging textarea:focus,
+#vibe-modal.dragging select:focus,
+#vibe-modal.dragging input:focus {
+  outline: none !important;
+  border-color: #ccc !important;
+  box-shadow: none !important;
+}
+
+/* Prevent text selection during drag */
+#vibe-modal.dragging {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -khtml-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+  user-select: none !important;
+}
+
+textarea[readonly] {
+  background-color: #f8f9fa;
+  color: #333;
+  cursor: text;
+}
+
+/* Buttons */
+button {
+  background: #0073b1;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  margin-top: 6px;
+}
+
+button:hover {
+  background: #005a8b;
+}
+
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.copy-btn {
+  background: #6c757d;
+  margin-right: 8px;
+}
+
+.copy-btn:hover {
+  background: #5a6268;
+}
+
+/* Platform-specific button */
+.vibe-btn {
+  background-color: #0073b1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  z-index: 1000;
+}
+
+.vibe-btn:hover {
+  background-color: #005a8b;
+}
+
+/* Modal Content */
+.vibe-modal-content {
+  background: #fff;
+  border: none;
+  padding: 16px;
+  width: 100%;
+  position: relative;
+  z-index: 9999;
+  border-radius: 8px;
+  font-family: Arial, sans-serif;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+/* Modal Header */
+.vibe-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#tone-heading {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Improve Section */
+.improve-section {
+  margin-bottom: 20px;
+}
+
+.improve-section label {
+  font-weight: bold;
+}
+
+#manualCommentInput {
+  width: 100%;
+  height: 80px;
+  padding: 8px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+#improveCommentBtn {
+  margin-top: 8px;
+  background-color: #2d8cff;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#improveLoader {
+  display: none;
+  margin-top: 10px;
+}
+
+#improveLoader span {
+  font-size: 12px;
+}
+
+/* Improved Comment Box */
+#improvedCommentBox {
+  display: none;
+  background: #f3f3f3;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 16px;
+}
+
+#improvedCommentText {
+  margin-top: 8px;
+}
+
+#copyImprovedBtn {
+  background-color: gray;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Tone Section */
+.tone-section {
+  margin-bottom: 12px;
+}
+
+#modalTone {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+}
+
+#modalTone:focus {
+  outline: none;
+  border-color: #2d8cff;
+  box-shadow: 0 0 0 2px rgba(45, 140, 255, 0.2);
+}
+
+/* Comments Section */
+.vibe-comment {
+  margin-bottom: 14px;
+}
+
+.vibe-comment > div:first-child {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.vibe-comment textarea {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.copy-btn {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #eee;
+  cursor: pointer;
+}
+
+/* DM Section */
+.vibe-dm {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 12px;
+}
+
+.vibe-dm > div:first-child {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.vibe-dm textarea {
+  width: 100%;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+#copy-dm {
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #eee;
+  cursor: pointer;
+}
+
+/* Loading State */
+.loading-state {
+  text-align: center;
+  padding: 20px;
+}
+
+/* Character Counter */
+.char-counter {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Loading States */
+#improveLoader {
+  color: #666;
+  font-style: italic;
+}
+
+/* Improved Comment Box */
+#improvedCommentBox {
+  background: #e8f5e8;
+  border: 1px solid #28a745;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+
+#improvedCommentBox strong {
+  color: #155724;
+}
+
+#improvedCommentText {
+  margin: 8px 0;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  #vibe-modal {
+    width: 95vw;
+    padding: 12px;
+  }
+
+  .vibe-btn {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  #vibe-modal {
+    border-width: 3px;
+  }
+
+  button {
+    border: 2px solid currentColor;
+  }
+}

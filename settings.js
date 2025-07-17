@@ -40,6 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const resetPromptsBtn = document.getElementById("resetPrompts");
   const toneContainer = document.getElementById("tonePromptsContainer");
 
+  // Store the actual API key for masking/unmasking
+  let actualApiKey = "";
+
   document.getElementById("exportSettings").addEventListener("click", () => {
     chrome.storage.local.get(["tonePrompts", "toneGuidelines"], (data) => {
       const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -78,7 +81,14 @@ document.addEventListener("DOMContentLoaded", () => {
   chrome.storage.local.get(
     ["vibeOpenAIKey", "tonePrompts", "toneGuidelines"],
     (result) => {
-      apiKeyInput.value = result.vibeOpenAIKey || "";
+      // Store the actual API key and mask it for display
+      actualApiKey = result.vibeOpenAIKey || "";
+      if (actualApiKey.length > 10) {
+        apiKeyInput.value =
+          actualApiKey.substring(0, 10) + "*".repeat(actualApiKey.length - 10);
+      } else {
+        apiKeyInput.value = actualApiKey;
+      }
       const storedPrompts = result.tonePrompts || {};
       const storedGuidelines = result.toneGuidelines || {};
 
@@ -97,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const saveBtn = document.createElement("button");
         saveBtn.textContent = "💾 Save";
         saveBtn.className = "individual-save";
-        saveBtn.style.backgroundColor = "#2d8cff";
+        saveBtn.style.backgroundColor = "#0073b1";
         saveBtn.style.color = "white";
         saveBtn.addEventListener("click", () => {
           chrome.storage.local.get(["tonePrompts", "toneGuidelines"], (res) => {
@@ -151,18 +161,52 @@ document.addEventListener("DOMContentLoaded", () => {
         wrapper.appendChild(label);
         wrapper.appendChild(promptTextarea);
         wrapper.appendChild(guidelineTextarea);
-        wrapper.appendChild(saveBtn);
-        wrapper.appendChild(resetBtn);
+
+        // Create a container for the buttons and right-align them
+        const buttonContainer = document.createElement("div");
+        buttonContainer.className = "tone-buttons";
+        buttonContainer.appendChild(saveBtn);
+        buttonContainer.appendChild(resetBtn);
+        wrapper.appendChild(buttonContainer);
 
         toneContainer.appendChild(wrapper);
       });
     }
   );
 
+  // Add event listeners for API key masking
+  apiKeyInput.addEventListener("focus", () => {
+    // Show the actual key when user focuses on the input
+    apiKeyInput.value = actualApiKey;
+  });
+
+  apiKeyInput.addEventListener("blur", () => {
+    // Mask the key when user leaves the input
+    if (actualApiKey.length > 10) {
+      apiKeyInput.value =
+        actualApiKey.substring(0, 10) + "*".repeat(actualApiKey.length - 10);
+    } else {
+      apiKeyInput.value = actualApiKey;
+    }
+  });
+
+  apiKeyInput.addEventListener("input", (e) => {
+    // Update the actual key as user types
+    actualApiKey = e.target.value;
+  });
+
   saveKeyBtn.addEventListener("click", () => {
-    const key = apiKeyInput.value.trim();
+    const key = actualApiKey.trim();
     chrome.storage.local.set({ vibeOpenAIKey: key }, () => {
       alert("✅ API key saved.");
+      // Update the stored actual key and mask it
+      actualApiKey = key;
+      if (actualApiKey.length > 10) {
+        apiKeyInput.value =
+          actualApiKey.substring(0, 10) + "*".repeat(actualApiKey.length - 10);
+      } else {
+        apiKeyInput.value = actualApiKey;
+      }
     });
   });
 

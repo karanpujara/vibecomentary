@@ -37,7 +37,7 @@
       }
 
       .save-btn {
-        background-color: #2d8cff;
+        background-color: #0073b1;
       }
 
       .reset-btn {
@@ -110,6 +110,12 @@
       .individual-reset:hover {
         background-color: #5a6268;
       }
+
+      /* Center-align individual tone buttons */
+      .tone-buttons {
+        text-align: center;
+        margin-top: 6px;
+      }
     </style>
   </head>
   <body>
@@ -118,7 +124,7 @@
     <label for="apiKey">Your OpenAI API Key</label>
     <textarea id="apiKey" placeholder="sk-..."></textarea>
 
-    <div>
+    <div style="text-align: center">
       <button id="saveKey" class="save-btn">Save</button>
       <button id="clearKey" class="reset-btn">Remove</button>
     </div>
@@ -140,11 +146,13 @@
     </div>
     <h4>🎯 Tone Training (Customize Comment Instructions)</h4>
 
-    <div id="tonePromptsContainer"></div>
-
     <div>
-      <button id="savePrompts" class="save-btn">💾 Save Prompts</button>
-      <button id="resetPrompts" class="reset-btn">🧹 Reset All</button>
+      <div id="tonePromptsContainer"></div>
+      <hr style="margin: 30px 0 20px 0" />
+      <div style="text-align: center; margin-top: 20px">
+        <button id="savePrompts" class="save-btn">💾 Save All Prompts</button>
+        <button id="resetPrompts" class="reset-btn">🧹 Reset All</button>
+      </div>
     </div>
 
     <script src="settings.js"></script>

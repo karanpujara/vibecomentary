@@ -2,9 +2,13 @@
   "manifest_version": 3,
   "name": "VibeCommentary",
   "version": "1.0",
-  "description": "Suggest engaging LinkedIn comments with AI.",
+  "description": "Suggest engaging comments and DMs with AI for LinkedIn, X (Twitter), and more.",
   "permissions": ["scripting", "activeTab", "storage"],
-  "host_permissions": ["https://www.linkedin.com/*"],
+  "host_permissions": [
+    "https://www.linkedin.com/*",
+    "https://twitter.com/*",
+    "https://x.com/*"
+  ],
   "background": {
     "service_worker": "background.js"
   },
@@ -18,9 +22,32 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.linkedin.com/feed/*"],
-      "js": ["contentScript.js"],
+      "matches": [
+        "https://www.linkedin.com/*",
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ],
+      "js": [
+        "platforms/basePlatform.js",
+        "platforms/linkedin.js",
+        "platforms/x.js",
+        "platformManager.js",
+        "cssManager.js",
+        "modalManager.js",
+        "aiService.js",
+        "contentScript.js"
+      ],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["modal.html", "modal.css"],
+      "matches": [
+        "https://www.linkedin.com/*",
+        "https://twitter.com/*",
+        "https://x.com/*"
+      ]
     }
   ],
   "icons": {

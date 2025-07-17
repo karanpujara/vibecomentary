@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
       div.innerHTML = `
         <label for="prompt-${tone}"><b>${tone}</b></label>
         <textarea id="prompt-${tone}" placeholder="Enter prompt for ${tone}...">${saved}</textarea>
-        <div class="char-counter" id="count-${tone}" style="font-size: 12px; color: #666;">${saved.length} characters</div>
+        <div class="char-counter" id="count-${tone}">${saved.length} characters</div>
       `;
       container.appendChild(div);
     });

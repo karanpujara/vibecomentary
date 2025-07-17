@@ -6,69 +6,59 @@
     <style>
       body {
         font-family: sans-serif;
-        padding: 12px;
+        padding: 16px;
         width: 300px;
       }
-      .section {
-        margin-bottom: 16px;
-      }
-      .comment-box,
-      .dm-box {
-        margin-top: 8px;
-        background: #f1f1f1;
-        padding: 6px;
-        border-radius: 4px;
+      .status {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 12px;
       }
-      .comment-box span,
-      .dm-box span {
-        flex: 1;
+      .dropdown {
+        width: 100%;
+        padding: 6px;
+        margin-top: 4px;
+      }
+      button {
+        margin-top: 10px;
+        width: 100%;
+        padding: 8px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      #openSettings {
+        background-color: #2d8cff;
+        color: white;
+      }
+      #openGuide {
+        background-color: gray;
+        color: white;
       }
     </style>
   </head>
   <body>
-    <div style="margin-bottom: 10px">
-      <label for="apiKey">OpenAI API Key:</label><br />
-      <input type="text" id="apiKey" placeholder="sk-..." style="width: 100%" />
-      <div id="saveStatus" style="color: green; font-size: 12px"></div>
+    <div class="status">
+      <div>🧠 OpenAI:</div>
+      <div id="apiStatus">Checking...</div>
     </div>
 
-    <div style="margin-bottom: 10px">
-      <label for="modeToggle">
-        <input type="checkbox" id="modeToggle" />
-        Use real OpenAI suggestions
-      </label>
-    </div>
+    <label for="modelSelect">🧠 Select GPT Model:</label>
+    <select id="modelSelect" class="dropdown">
+      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+      <option value="gpt-4">GPT-4</option>
+      <option value="gpt-4o">GPT-4o</option>
+    </select>
 
-    <div class="section">
-      <label for="tone">🎯 Select Tone:</label>
-      <select id="tone">
-        <option>Smart Contrarian</option>
-        <option>Agreement with Value</option>
-        <option>Ask a Question</option>
-      </select>
-    </div>
-
-    <div class="section">
-      <div class="comment-box">
-        <span>Comment 1</span> <button class="copy-one">📋</button>
-      </div>
-      <div class="comment-box">
-        <span>Comment 2</span> <button class="copy-one">📋</button>
-      </div>
-      <div class="dm-box">
-        <span>DM Template</span> <button class="copy-one">📋</button>
-      </div>
+    <div style="margin-top: 14px; font-size: 14px">
+      ✅ Available for: <strong>LinkedIn</strong><br />
+      🕐 Coming soon: X, Farcaster
     </div>
 
     <button id="openSettings">⚙️ Open Settings</button>
-
-    <div class="section">
-      <button id="regenerate">🔄 Regenerate</button>
-      <button id="copy">📋 Copy All</button>
-    </div>
+    <button id="openGuide">📘 Open Guide</button>
 
     <script src="popup.js"></script>
   </body>
