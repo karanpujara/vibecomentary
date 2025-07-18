@@ -46,7 +46,7 @@ class ModalManager {
         <div id="improvedCommentBox" style="display:none;">
           <strong>✅ Improved Version:</strong>
           <div class="editable-content" id="improvedCommentText" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; color:#333; background-color:#ffffff; min-height:40px; line-height:1.4; margin:8px 0; cursor: text; user-select: text;"></div>
-          <button id="copyImprovedBtn">📋 Copy</button>
+          <button id="copyImprovedBtn" class="copy-btn" type="button">📋 Copy</button>
         </div>
 
         <!-- 🎯 Change Tone -->
@@ -126,6 +126,15 @@ class ModalManager {
 
     // Setup drag functionality
     this.setupDrag();
+
+    // Debug: Verify copy buttons are properly set up
+    this.verifyCopyButtons();
+
+    // Ensure all copy buttons are properly initialized
+    this.initializeCopyButtons();
+
+    // Initialize improved comment functionality
+    this.initializeImprovedComment();
   }
 
   hide() {
@@ -175,16 +184,46 @@ class ModalManager {
       };
     }
 
-    // Copy buttons
+    // Copy buttons - Unified event handling for all platforms
     this.modal.addEventListener("click", (e) => {
+      console.log("🔍 Click event on:", e.target);
+      console.log("🔍 Target classes:", e.target.classList.toString());
+      console.log("🔍 Target ID:", e.target.id);
+
+      // Handle comment copy buttons
       if (e.target.classList.contains("copy-btn")) {
-        this.copyToClipboard(e.target.dataset.index);
-      }
-      if (e.target.id === "copyImprovedBtn") {
-        this.copyImprovedComment();
-      }
-      if (e.target.id === "copy-dm") {
-        this.copyDM();
+        const index = e.target.dataset.index;
+        const buttonId = e.target.id;
+
+        console.log("📋 Copy button clicked:", {
+          index,
+          buttonId,
+          element: e.target,
+        });
+
+        // Determine what type of copy button this is
+        if (buttonId === "copy-dm") {
+          console.log("📋 DM copy button clicked");
+          this.copyDM();
+        } else if (buttonId === "copyImprovedBtn") {
+          console.log("📋 Improved copy button clicked");
+          this.copyImprovedComment();
+        } else if (index !== undefined) {
+          console.log("📋 Comment copy button clicked, index:", index);
+          this.copyToClipboard(index);
+        } else {
+          // Fallback: find the index by button position within comment sections only
+          const commentButtons = this.modal.querySelectorAll(
+            ".vibe-comment .copy-btn"
+          );
+          const buttonIndex = Array.from(commentButtons).indexOf(e.target);
+          console.log(
+            "📋 Using fallback index (comment buttons only):",
+            buttonIndex
+          );
+          this.copyToClipboard(buttonIndex);
+        }
+        return;
       }
     });
 
@@ -317,14 +356,14 @@ class ModalManager {
             .map(
               (c, i) => `
             <div class="vibe-comment" style="margin-bottom:14px;">
-              <div class="editable-content" data-index="${i}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; color:#333; background-color:#ffffff; min-height:40px; line-height:1.4; margin-bottom:8px; cursor: text; user-select: text;">${c
+              <div class="editable-content" data-index="${i}" id="comment-content-${i}" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; color:#333; background-color:#ffffff; min-height:40px; line-height:1.4; margin-bottom:8px; cursor: text; user-select: text;">${c
                 .replace(
                   /(Comment\s*\d+:|^\d+\.|First comment:|Second comment:)/gi,
                   ""
                 )
                 .replace(/\*\*Comment\s*\d+:\*\*/gi, "")
                 .trim()}</div>
-              <button class="copy-btn" data-index="${i}">📋 Copy</button>
+              <button class="copy-btn" data-index="${i}" id="copy-comment-${i}" type="button">📋 Copy</button>
             </div>`
             )
             .join("")}
@@ -335,12 +374,12 @@ class ModalManager {
 
   renderDM(dmSuggestion) {
     return `
-      <div class="dm-section" style="margin-top:20px; border-top:1px solid #ddd; padding-top:12px;">
+      <div class="dm-section">
         <div style="font-weight:bold; margin-bottom:6px;">💌 DM Suggestion</div>
-        <div class="editable-content" id="dm-content" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; color:#333; background-color:#ffffff; min-height:40px; line-height:1.4; margin-bottom:8px; cursor: text; user-select: text;">${
+        <div class="editable-content" id="dm-content">${
           dmSuggestion || "No DM suggestion available."
         }</div>
-        <button id="copy-dm" class="copy-btn">📋 Copy</button>
+        <button id="copy-dm" class="copy-btn" type="button">📋 Copy</button>
       </div>
     `;
   }
@@ -354,39 +393,451 @@ class ModalManager {
   }
 
   copyToClipboard(index) {
-    const commentDiv = this.modal.querySelectorAll(
-      `.vibe-comment .editable-content[data-index="${index}"]`
+    console.log("📋 Copying comment with index:", index, "type:", typeof index);
+
+    // Convert index to number if it's a string
+    const numericIndex = parseInt(index, 10);
+    if (isNaN(numericIndex)) {
+      console.error("❌ Invalid index:", index);
+      return;
+    }
+
+    // Try multiple selectors to find the comment div
+    let commentDiv = null;
+
+    // Method 1: Try data-index selector
+    commentDiv = this.modal.querySelectorAll(
+      `.vibe-comment .editable-content[data-index="${numericIndex}"]`
     )[0];
-    if (commentDiv) {
-      navigator.clipboard.writeText(commentDiv.textContent);
-      const btn = this.modal.querySelectorAll(".copy-btn")[index];
-      btn.innerText = "✅ Copied!";
-      setTimeout(() => (btn.innerText = "📋 Copy"), 1500);
+
+    // Method 2: Try by position in vibe-comment containers (most reliable)
+    if (!commentDiv) {
+      const commentContainers = this.modal.querySelectorAll(".vibe-comment");
+      console.log(
+        `🔍 Found ${commentContainers.length} comment containers, looking for index ${numericIndex}`
+      );
+      if (commentContainers[numericIndex]) {
+        commentDiv =
+          commentContainers[numericIndex].querySelector(".editable-content");
+        console.log(
+          `✅ Found comment div in container ${numericIndex}:`,
+          commentDiv
+        );
+      } else {
+        console.error(`❌ Comment container ${numericIndex} not found`);
+      }
+    }
+
+    // Method 3: Try by position in all editable-content elements within vibe-comment
+    if (!commentDiv) {
+      const allEditableContent = this.modal.querySelectorAll(
+        ".vibe-comment .editable-content"
+      );
+      console.log(
+        `🔍 Found ${allEditableContent.length} editable content elements, looking for index ${numericIndex}`
+      );
+      commentDiv = allEditableContent[numericIndex];
+      if (commentDiv) {
+        console.log(
+          `✅ Found comment div at position ${numericIndex}:`,
+          commentDiv
+        );
+      }
+    }
+
+    if (!commentDiv) {
+      console.error("❌ Comment div not found for index:", numericIndex);
+      console.log(
+        "🔍 Available comment divs:",
+        this.modal.querySelectorAll(".vibe-comment .editable-content").length
+      );
+      return;
+    }
+
+    const textToCopy = commentDiv.textContent.trim();
+    console.log("📋 Text to copy:", textToCopy);
+
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          console.log("✅ Text copied successfully");
+          this.updateCopyButton(numericIndex, "✅ Copied!");
+        })
+        .catch((err) => {
+          console.error("❌ Clipboard API failed:", err);
+          this.fallbackCopy(textToCopy, numericIndex);
+        });
+    } else {
+      console.log("⚠️ Clipboard API not available, using fallback");
+      this.fallbackCopy(textToCopy, numericIndex);
     }
   }
 
   copyImprovedComment() {
-    const text = this.modal.querySelector("#improvedCommentText").textContent;
-    if (text) {
-      navigator.clipboard.writeText(text);
-      const btn = this.modal.querySelector("#copyImprovedBtn");
-      if (btn) {
-        btn.innerText = "✅ Copied!";
-        setTimeout(() => (btn.innerText = "📋 Copy"), 1500);
+    console.log("📋 Copying improved comment");
+
+    // Try multiple selectors to find the improved comment text
+    let textElement = this.modal.querySelector("#improvedCommentText");
+
+    if (!textElement) {
+      console.log("🔍 Trying alternative selectors for improved comment text");
+      textElement = this.modal.querySelector("[id='improvedCommentText']");
+    }
+
+    if (!textElement) {
+      console.log("🔍 Trying to find by class name");
+      textElement = this.modal.querySelector(
+        "#improvedCommentBox .editable-content"
+      );
+    }
+
+    if (!textElement) {
+      console.log(
+        "🔍 Trying to find any editable content in improved comment box"
+      );
+      const improvedBox = this.modal.querySelector("#improvedCommentBox");
+      if (improvedBox) {
+        textElement = improvedBox.querySelector(".editable-content");
       }
+    }
+
+    if (!textElement) {
+      console.error("❌ Improved comment text element not found");
+      console.log("🔍 Available elements in modal:", {
+        improvedCommentBox: this.modal.querySelector("#improvedCommentBox"),
+        improvedCommentText: this.modal.querySelector("#improvedCommentText"),
+        allEditableContent: this.modal.querySelectorAll(".editable-content"),
+        allDivs: this.modal.querySelectorAll("div[id*='improved']"),
+      });
+      return;
+    }
+
+    const textToCopy = textElement.textContent.trim();
+    console.log("📋 Improved text to copy:", textToCopy);
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          console.log("✅ Improved text copied successfully");
+          this.updateCopyButtonById("copyImprovedBtn", "✅ Copied!");
+        })
+        .catch((err) => {
+          console.error("❌ Clipboard API failed for improved comment:", err);
+          this.fallbackCopy(textToCopy, null, "copyImprovedBtn");
+        });
+    } else {
+      this.fallbackCopy(textToCopy, null, "copyImprovedBtn");
     }
   }
 
   copyDM() {
+    console.log("📋 Copying DM");
+
     const dmDiv = this.modal.querySelector("#dm-content");
-    if (dmDiv) {
-      navigator.clipboard.writeText(dmDiv.textContent);
-      const btn = this.modal.querySelector("#copy-dm");
-      if (btn) {
-        btn.innerText = "✅ Copied!";
-        setTimeout(() => (btn.innerText = "📋 Copy"), 1500);
+    console.log("🔍 DM div found:", dmDiv);
+    if (!dmDiv) {
+      console.error("❌ DM content element not found");
+      // Try alternative selectors
+      const alternativeDmDiv = this.modal.querySelector("[id='dm-content']");
+      console.log("🔍 Alternative DM div found:", alternativeDmDiv);
+      if (alternativeDmDiv) {
+        console.log("✅ Found DM div with alternative selector");
+        const textToCopy = alternativeDmDiv.textContent.trim();
+        console.log("📋 DM text to copy:", textToCopy);
+        this.copyDMContent(textToCopy);
+        return;
+      }
+      return;
+    }
+
+    const textToCopy = dmDiv.textContent.trim();
+    console.log("📋 DM text to copy:", textToCopy);
+    this.copyDMContent(textToCopy);
+  }
+
+  // Helper method to copy DM content
+  copyDMContent(textToCopy) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(textToCopy)
+        .then(() => {
+          console.log("✅ DM copied successfully");
+          this.updateCopyButtonById("copy-dm", "✅ Copied!");
+        })
+        .catch((err) => {
+          console.error("❌ Clipboard API failed for DM:", err);
+          this.fallbackCopy(textToCopy, null, "copy-dm");
+        });
+    } else {
+      this.fallbackCopy(textToCopy, null, "copy-dm");
+    }
+  }
+
+  // Helper method to update copy button text
+  updateCopyButton(index, newText) {
+    console.log("📋 Updating copy button at index:", index);
+
+    // Try multiple methods to find the button
+    let btn = null;
+
+    // Method 1: Try by data-index attribute (most reliable)
+    btn = this.modal.querySelector(`.copy-btn[data-index="${index}"]`);
+    if (btn) {
+      console.log(`✅ Found button by data-index ${index}:`, btn);
+    }
+
+    // Method 2: Try by position in vibe-comment containers only
+    if (!btn) {
+      const commentContainers = this.modal.querySelectorAll(".vibe-comment");
+      console.log(
+        `🔍 Found ${commentContainers.length} comment containers, looking for button at index ${index}`
+      );
+      if (commentContainers[index]) {
+        btn = commentContainers[index].querySelector(".copy-btn");
+        console.log(`✅ Found button in container ${index}:`, btn);
+      } else {
+        console.error(`❌ Comment container ${index} not found`);
       }
     }
+
+    // Method 3: Try by position in comment copy buttons only (fallback)
+    if (!btn) {
+      const commentButtons = this.modal.querySelectorAll(
+        ".vibe-comment .copy-btn"
+      );
+      console.log(
+        `🔍 Found ${commentButtons.length} comment copy buttons, looking for index ${index}`
+      );
+      btn = commentButtons[index];
+      if (btn) {
+        console.log(`✅ Found button at position ${index}:`, btn);
+      }
+    }
+
+    if (btn) {
+      console.log("✅ Found button to update:", btn);
+      btn.innerText = newText;
+      setTimeout(() => (btn.innerText = "📋 Copy"), 1500);
+    } else {
+      console.error("❌ Could not find copy button for index:", index);
+    }
+  }
+
+  // Helper method to update copy button by ID
+  updateCopyButtonById(buttonId, newText) {
+    console.log(`📋 Updating copy button by ID: ${buttonId}`);
+    const btn = this.modal.querySelector(`#${buttonId}`);
+    if (btn) {
+      console.log(`✅ Found button with ID ${buttonId}:`, btn);
+      btn.innerText = newText;
+      setTimeout(() => (btn.innerText = "📋 Copy"), 1500);
+    } else {
+      console.error(`❌ Could not find button with ID: ${buttonId}`);
+      // Try alternative selectors
+      const alternativeBtn = this.modal.querySelector(`[id="${buttonId}"]`);
+      if (alternativeBtn) {
+        console.log(
+          `✅ Found button with alternative selector:`,
+          alternativeBtn
+        );
+        alternativeBtn.innerText = newText;
+        setTimeout(() => (alternativeBtn.innerText = "📋 Copy"), 1500);
+      } else {
+        console.error(
+          `❌ Button not found with any selector for ID: ${buttonId}`
+        );
+      }
+    }
+  }
+
+  // Fallback copy method for older browsers
+  fallbackCopy(text, index = null, buttonId = null) {
+    console.log("📋 Using fallback copy method");
+
+    // Create temporary textarea
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    textarea.style.top = "-9999px";
+    document.body.appendChild(textarea);
+
+    try {
+      textarea.select();
+      textarea.setSelectionRange(0, 99999); // For mobile devices
+      const successful = document.execCommand("copy");
+
+      if (successful) {
+        console.log("✅ Fallback copy successful");
+        if (index !== null) {
+          this.updateCopyButton(index, "✅ Copied!");
+        } else if (buttonId) {
+          this.updateCopyButtonById(buttonId, "✅ Copied!");
+        }
+      } else {
+        console.error("❌ Fallback copy failed");
+        alert("Copy failed. Please select and copy the text manually.");
+      }
+    } catch (err) {
+      console.error("❌ Fallback copy error:", err);
+      alert("Copy failed. Please select and copy the text manually.");
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
+  // Debug method to verify copy buttons are properly set up
+  verifyCopyButtons() {
+    console.log("🔍 Verifying copy buttons setup...");
+
+    // Check comment copy buttons
+    const commentButtons = this.modal.querySelectorAll(".copy-btn");
+    console.log(`📋 Found ${commentButtons.length} copy buttons`);
+
+    commentButtons.forEach((btn, index) => {
+      console.log(`📋 Button ${index}:`, {
+        classList: btn.classList.toString(),
+        id: btn.id,
+        dataIndex: btn.dataset.index,
+        textContent: btn.textContent,
+        style: btn.style.cssText,
+      });
+    });
+
+    // Check specific buttons
+    const dmButton = this.modal.querySelector("#copy-dm");
+    const improvedButton = this.modal.querySelector("#copyImprovedBtn");
+
+    console.log("📋 DM button:", dmButton ? "Found" : "Not found");
+    console.log("📋 Improved button:", improvedButton ? "Found" : "Not found");
+
+    // Check if buttons are clickable
+    commentButtons.forEach((btn, index) => {
+      const rect = btn.getBoundingClientRect();
+      console.log(`📋 Button ${index} position:`, {
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height,
+        visible: rect.width > 0 && rect.height > 0,
+      });
+    });
+  }
+
+  // Initialize all copy buttons with proper attributes
+  initializeCopyButtons() {
+    console.log("🔧 Initializing copy buttons...");
+
+    // Get comment copy buttons only
+    const commentButtons = this.modal.querySelectorAll(
+      ".vibe-comment .copy-btn"
+    );
+    const dmButton = this.modal.querySelector("#copy-dm");
+    const improvedButton = this.modal.querySelector("#copyImprovedBtn");
+
+    // Initialize comment buttons with proper indices
+    commentButtons.forEach((btn, index) => {
+      // Ensure button has proper attributes
+      if (!btn.id) {
+        btn.id = `copy-comment-${index}`;
+      }
+
+      // Set data-index to match the comment index
+      btn.dataset.index = index.toString();
+
+      // Ensure button is clickable
+      btn.style.pointerEvents = "auto";
+      btn.style.cursor = "pointer";
+      btn.style.userSelect = "none";
+
+      console.log(`🔧 Initialized comment button ${index}:`, {
+        id: btn.id,
+        dataIndex: btn.dataset.index,
+        classList: btn.classList.toString(),
+      });
+    });
+
+    // Verify button-to-content mapping
+    this.verifyButtonContentMapping();
+
+    console.log(`🔧 Initialized ${commentButtons.length} comment copy buttons`);
+    console.log(`🔧 DM button:`, dmButton ? "Found" : "Not found");
+    console.log(`🔧 Improved button:`, improvedButton ? "Found" : "Not found");
+  }
+
+  // Initialize improved comment functionality
+  initializeImprovedComment() {
+    console.log("🔧 Initializing improved comment functionality...");
+
+    const improvedBox = this.modal.querySelector("#improvedCommentBox");
+    const improvedText = this.modal.querySelector("#improvedCommentText");
+    const copyButton = this.modal.querySelector("#copyImprovedBtn");
+
+    console.log("🔧 Improved comment elements:", {
+      improvedBox: improvedBox ? "Found" : "Not found",
+      improvedText: improvedText ? "Found" : "Not found",
+      copyButton: copyButton ? "Found" : "Not found",
+    });
+
+    if (copyButton) {
+      // Ensure the copy button is properly set up
+      copyButton.style.pointerEvents = "auto";
+      copyButton.style.cursor = "pointer";
+      copyButton.style.userSelect = "none";
+      console.log("🔧 Improved comment copy button initialized");
+    }
+
+    if (improvedText) {
+      // Ensure the text element is properly set up
+      improvedText.style.userSelect = "text";
+      improvedText.style.cursor = "text";
+      console.log("🔧 Improved comment text element initialized");
+    }
+  }
+
+  // Verify that button indices match content indices
+  verifyButtonContentMapping() {
+    console.log("🔍 Verifying button-to-content mapping...");
+
+    const commentContainers = this.modal.querySelectorAll(".vibe-comment");
+    const commentButtons = this.modal.querySelectorAll(
+      ".vibe-comment .copy-btn"
+    );
+
+    console.log(
+      `🔍 Found ${commentContainers.length} comment containers and ${commentButtons.length} comment buttons`
+    );
+
+    commentContainers.forEach((container, index) => {
+      const content = container.querySelector(".editable-content");
+      const button = container.querySelector(".copy-btn");
+
+      console.log(`🔍 Container ${index}:`, {
+        hasContent: !!content,
+        contentDataIndex: content?.dataset.index,
+        hasButton: !!button,
+        buttonDataIndex: button?.dataset.index,
+        buttonId: button?.id,
+        contentText: content?.textContent?.slice(0, 50) + "...",
+      });
+
+      // Verify data-index matches
+      if (content && button) {
+        const contentIndex = content.dataset.index;
+        const buttonIndex = button.dataset.index;
+
+        if (contentIndex !== buttonIndex) {
+          console.warn(
+            `⚠️ Index mismatch in container ${index}: content=${contentIndex}, button=${buttonIndex}`
+          );
+        } else {
+          console.log(`✅ Container ${index}: indices match (${contentIndex})`);
+        }
+      }
+    });
   }
 
   /**

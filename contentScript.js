@@ -65,10 +65,19 @@ function isExtensionContextValid() {
 
 // Inject buttons under posts
 function injectButtonUnderPost() {
+  console.log("🔍 injectButtonUnderPost called");
+  console.log("📊 Platform manager:", !!platformManager);
+  console.log(
+    "🎯 Is supported platform:",
+    platformManager?.isSupportedPlatform()
+  );
+
   // Use platform manager if available, otherwise fall back to old logic
   if (platformManager && platformManager.isSupportedPlatform()) {
+    console.log("✅ Using platform manager injection");
     injectButtonWithPlatformManager();
   } else {
+    console.log("⚠️ Using legacy injection");
     injectButtonWithLegacyLogic();
   }
 }
@@ -77,26 +86,88 @@ function injectButtonWithPlatformManager() {
   const platform = platformManager.getCurrentPlatform();
   const posts = platform.findPosts();
 
-  posts.forEach((post) => {
-    if (post.querySelector(".vibe-btn")) return;
+  console.log(
+    `🔍 Platform: ${platform.getPlatformName()}, Found ${posts.length} posts`
+  );
+
+  // Add a small delay to ensure DOM is fully rendered
+  setTimeout(() => {
+    console.log("🔍 Processing posts after delay...");
+    processPosts(posts, platform);
+  }, 500);
+}
+
+function processPosts(posts, platform) {
+  // Clear any existing buttons first to start fresh
+  const existingButtons = document.querySelectorAll(
+    ".vibe-btn, .farcaster-btn"
+  );
+  if (existingButtons.length > 0) {
+    console.log(
+      `🧹 Clearing ${existingButtons.length} existing buttons to start fresh`
+    );
+    existingButtons.forEach((btn) => btn.remove());
+  }
+
+  let processedCount = 0;
+  let skippedCount = 0;
+
+  posts.forEach((post, index) => {
+    console.log(`🔍 Processing post ${index}:`, {
+      element: post,
+      classes: post.className,
+      hasEngagement: !!post.querySelector(
+        ".mr-4.mt-3.flex.flex-row.items-center"
+      ),
+      hasExistingButton: !!post.querySelector(".vibe-btn, .farcaster-btn"),
+      textContent: post.textContent?.slice(0, 100) + "...",
+    });
+
+    // Check for any existing vibe buttons (including farcaster-btn class)
+    if (post.querySelector(".vibe-btn, .farcaster-btn")) {
+      console.log(`⏭️ Post ${index}: Button already exists, skipping`);
+      skippedCount++;
+      return;
+    }
 
     const actionButton = platform.findActionButton(post);
     if (!actionButton) {
+      console.log(`❌ Post ${index}: No action button found`);
       return;
     }
 
     const btn = platform.createActionButton(platform.getPlatformName());
     if (!btn) {
+      console.log(`❌ Post ${index}: Failed to create button`);
       return;
     }
 
-    btn.addEventListener("click", async () => {
+    console.log(`✅ Post ${index}: Created button:`, btn);
+
+    btn.addEventListener("click", async (e) => {
+      console.log(`🎯 Button clicked for post ${index}`);
+      e.stopPropagation();
+      e.preventDefault();
       aiService.setActivePost(post);
       await handleButtonClick(post, platform);
     });
 
-    platform.injectButton(post, btn);
+    console.log(`🔍 Attempting to inject button for post ${index}...`);
+    const success = platform.injectButton(post, btn);
+    console.log(
+      `📌 Post ${index}: Button injection ${success ? "successful" : "failed"}`
+    );
+
+    if (success) {
+      processedCount++;
+    } else {
+      console.log(`❌ Post ${index}: Injection failed, post structure:`, post);
+    }
   });
+
+  console.log(
+    `📊 Summary: Processed ${processedCount} posts, skipped ${skippedCount} posts`
+  );
 }
 
 function injectButtonWithLegacyLogic() {
@@ -400,6 +471,34 @@ initializeServices().then((success) => {
     setInterval(injectButtonUnderPost, 2000);
   }
 });
+
+// Add debugging for Farcaster specifically
+if (
+  window.location.hostname.includes("farcaster.xyz") ||
+  window.location.hostname.includes("warpcast.com")
+) {
+  console.log("🔍 Farcaster detected, adding extra debugging");
+
+  // Check if platform manager is working
+  setTimeout(() => {
+    if (platformManager) {
+      const platform = platformManager.getCurrentPlatform();
+      console.log("🎯 Current platform:", platform?.getPlatformName());
+
+      if (platform) {
+        const posts = platform.findPosts();
+        console.log("📊 Found posts:", posts.length);
+        posts.forEach((post, index) => {
+          console.log(`📝 Post ${index}:`, {
+            textContent: post.textContent?.slice(0, 100) + "...",
+            className: post.className,
+            id: post.id,
+          });
+        });
+      }
+    }
+  }, 3000);
+}
 
 // Fallback: Ensure CSS is applied even if services fail
 setTimeout(() => {

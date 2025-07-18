@@ -13,6 +13,7 @@ class PlatformManager {
     // Register all available platforms
     this.registerPlatform(new LinkedInPlatform());
     this.registerPlatform(new XPlatform());
+    this.registerPlatform(new FarcasterPlatform());
     // Add more platforms here as they're implemented
   }
 

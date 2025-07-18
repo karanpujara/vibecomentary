@@ -282,74 +282,33 @@ class XPlatform extends BasePlatform {
   }
 
   injectButton(post, buttonElement) {
-    // Find the main tweet container
-    const tweetContainer = post.closest('article[data-testid="tweet"]') || post;
-
-    if (tweetContainer) {
-      // Create a wrapper div for the button with proper styling
-      const wrapper = document.createElement("div");
-      wrapper.style.cssText = `
+    const actionButton = this.findActionButton(post);
+    if (actionButton && actionButton.parentElement) {
+      // Create a container div for proper centering
+      const container = document.createElement("div");
+      container.style.cssText = `
         display: flex;
         justify-content: center;
         align-items: center;
         width: 100%;
-        margin-top: 16px;
-        margin-bottom: 16px;
-        padding: 12px 0;
-        border-top: 1px solid #2f3336;
-        clear: both;
-        position: relative;
-        z-index: 1;
-        background: transparent;
+        margin: 8px 0;
+        padding: 0;
       `;
 
-      // Ensure the button has proper styling
-      buttonElement.style.cssText = `
-        background-color: #0073b1 !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 4px !important;
-        padding: 8px 16px !important;
-        margin: 0 !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        transition: background-color 0.2s !important;
-        z-index: 1000 !important;
-        display: inline-block !important;
-        text-decoration: none !important;
-        box-sizing: border-box !important;
-        font-family: inherit !important;
-        min-width: auto !important;
-        max-width: none !important;
-        height: auto !important;
-        line-height: normal !important;
-        white-space: nowrap !important;
-        overflow: visible !important;
-      `;
+      // Add the button to the container
+      container.appendChild(buttonElement);
 
-      // Add the button to the wrapper
-      wrapper.appendChild(buttonElement);
-
-      // Find the engagement metrics container
-      const engagementContainer = tweetContainer
-        .querySelector('[data-testid="reply"]')
-        ?.closest('[role="group"]');
-
-      if (engagementContainer) {
-        // Insert after the engagement container
-        engagementContainer.parentNode.insertBefore(
-          wrapper,
-          engagementContainer.nextSibling
+      // Insert the container after the action buttons group
+      const actionGroup =
+        actionButton.closest('[role="group"]') || actionButton.parentElement;
+      if (actionGroup && actionGroup.parentElement) {
+        actionGroup.parentElement.insertBefore(
+          container,
+          actionGroup.nextSibling
         );
-      } else {
-        // Fallback: append to the end of the tweet container
-        tweetContainer.appendChild(wrapper);
+        return true;
       }
-
-      return true;
     }
-
     return false;
   }
 

@@ -8,7 +8,7 @@ A Chrome extension that uses AI to generate engaging comments and DM suggestions
 - **Multiple Tones**: Choose from 13 different comment tones (Friendly, Professional, Contrarian, etc.)
 - **DM Suggestions**: Get personalized direct message suggestions
 - **Comment Improvement**: Improve your own comments with AI assistance
-- **Multi-Platform Support**: Works on LinkedIn, X (Twitter), and extensible for other platforms
+- **Multi-Platform Support**: Works on LinkedIn, X (Twitter), Farcaster, and extensible for other platforms
 - **Customizable Prompts**: Advanced settings to customize AI behavior for each tone
 - **Export/Import Settings**: Backup and restore your custom configurations
 
@@ -33,7 +33,8 @@ vibecommentary/
 ├── 📁 platforms/                 # Platform-specific implementations
 │   ├── 📄 basePlatform.js        # Base platform interface
 │   ├── 📄 linkedin.js            # LinkedIn-specific logic
-│   └── 📄 x.js                   # X (Twitter) specific logic
+│   ├── 📄 x.js                   # X (Twitter) specific logic
+│   └── 📄 farcaster.js           # Farcaster-specific logic
 ├── 📁 styles/                    # Platform-specific CSS
 │   ├── 📄 base.css               # Base styles for all platforms
 │   ├── 📄 linkedin.css           # LinkedIn-specific styles
@@ -152,6 +153,14 @@ class BasePlatform {
 - **Name Extraction**: Extracts names from X's user elements
 - **Styling**: X-specific button and modal styling
 
+#### Farcaster Implementation (`platforms/farcaster.js`)
+
+- **Post Detection**: Uses Farcaster-specific selectors for casts
+- **Button Injection**: Injects next to Farcaster reply buttons
+- **Text Extraction**: Handles Farcaster's cast structure
+- **Name Extraction**: Extracts names from Farcaster's user elements
+- **Styling**: Farcaster-specific button and modal styling with purple theme
+
 ### CSS Architecture
 
 #### Base CSS (`styles/base.css`)
@@ -165,6 +174,7 @@ class BasePlatform {
 
 - **LinkedIn CSS**: LinkedIn-specific button positioning and styling
 - **X CSS**: X-specific button positioning and styling
+- **Farcaster CSS**: Farcaster-specific button positioning and styling with purple theme
 - **Modal CSS**: Modal-specific styling with platform considerations
 
 ## 🎯 Key Features Explained
@@ -222,7 +232,7 @@ The extension uses a platform-agnostic architecture:
    - Save the settings
 
 4. **Start Using**
-   - Navigate to LinkedIn or X
+   - Navigate to LinkedIn, X, or Farcaster
    - Look for "💬 Suggest Comments" buttons under posts
    - Click to generate AI-powered comments and DMs
 
@@ -249,6 +259,19 @@ The extension uses a platform-agnostic architecture:
 - **No Data Collection**: No user data is sent to external servers
 - **API Key Security**: API key is only used for OpenAI API calls
 - **No Tracking**: No analytics or tracking code
+
+## 📋 Recent Changes
+
+### Version 1.0 - Farcaster Support Added
+
+- **New Platform**: Added full support for Farcaster.xyz
+- **Platform Detection**: Automatic detection of Farcaster pages
+- **Cast Support**: Generate AI-powered replies to Farcaster casts
+- **DM Support**: Generate personalized messages for Farcaster users
+- **Purple Theme**: Farcaster-specific styling with purple color scheme
+- **Content Types**: Support for "Cast" (replies) and "Message" (DMs)
+- **Character Limits**: Platform-appropriate character limits for Farcaster
+- **Platform-Specific Prompts**: Optimized prompts for Farcaster's community
 
 ## 🐛 Troubleshooting
 

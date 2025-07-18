@@ -51,6 +51,9 @@ class AIService {
         ? platform.extractUserProfileName()
         : "Your Name";
 
+      // Handle null userProfileName gracefully
+      const safeUserProfileName = userProfileName || "Your Name";
+
       // Get custom prompts and guidelines from storage, fallback to platform-specific or default
       const customPrompts = await this.getCustomPrompts();
       const customGuidelines = await this.getCustomGuidelines();
@@ -107,12 +110,13 @@ Post:
 
 IMPORTANT: Start the message with "Hello ${firstNameWithPrefix}, " followed immediately by the main content on the same line. Do not add line breaks after the greeting. Keep it compact since only the first 2 lines are visible in DM preview.
 
-End the message with a line break, then "Best," on a new line, then "${userProfileName}" on the next line.
+End the message with a line break, then "Best," on a new line, then "${safeUserProfileName}" on the next line.
 
 Post:
 "${postText}"`;
 
       console.log("🤖 Sending requests to OpenAI...");
+      console.log("🧠 Selected model:", selectedModel);
       console.log("📝 Comment prompt:", finalPrompt);
       console.log("📝 DM prompt:", dmPrompt);
 
@@ -131,13 +135,37 @@ Post:
         console.log("📊 DM response:", dmData);
 
         if (commentData.error) {
-          throw new Error(`OpenAI API Error: ${commentData.error.message}`);
+          console.error(
+            "❌ OpenAI API Error Details:",
+            JSON.stringify(commentData.error, null, 2)
+          );
+
+          // Show user-friendly alert based on error type
+          this.showOpenAIErrorAlert(commentData.error);
+
+          throw new Error(
+            `OpenAI API Error: ${commentData.error.message} (Type: ${
+              commentData.error.type || "unknown"
+            })`
+          );
+        }
+
+        if (dmData.error) {
+          console.error(
+            "❌ OpenAI DM API Error Details:",
+            JSON.stringify(dmData.error, null, 2)
+          );
+          // Don't throw for DM errors, just log them
         }
 
         const commentContent = commentData.choices?.[0]?.message?.content;
         const dmContent = dmData.choices?.[0]?.message?.content;
 
         if (!commentContent) {
+          console.error(
+            "❌ No content in response:",
+            JSON.stringify(commentData, null, 2)
+          );
           throw new Error("No content received from OpenAI for comments");
         }
 
@@ -177,13 +205,35 @@ Post:
         throw new Error("Missing API key");
       }
 
-      const platformName = this.getCurrentPlatform()
-        ? this.getCurrentPlatform().getPlatformName()
-        : "this platform";
-      const defaultImprovePrompt = `Improve this comment and make it more thoughtful, clearer, and better suited for a professional conversation on ${platformName}.`;
-      const defaultImproveGuideline = `- Rewrite the comment to sound clearer, more articulate.\n- Maintain the same idea and emotion.\n- Make it suitable for professional platforms.`;
+      // Log the model being used for debugging
+      console.log("🤖 Using model:", selectedModel);
+      console.log("🔑 API Key length:", apiKey.length);
 
-      const fullPrompt = `${defaultImprovePrompt}\n\nGuidelines:\n${defaultImproveGuideline}\n\nHere is my comment:\n"${commentText}"\n\nImprove it:`;
+      // Get custom prompts and guidelines from storage
+      const customPrompts = await this.getCustomPrompts();
+      const customGuidelines = await this.getCustomGuidelines();
+
+      // Use custom improve prompt if available, otherwise use default
+      let improvePrompt;
+      let improveGuideline;
+
+      if (customPrompts && customPrompts.Improve) {
+        // Use custom prompt without platform name
+        improvePrompt = customPrompts.Improve;
+        improveGuideline =
+          customGuidelines && customGuidelines.Improve
+            ? customGuidelines.Improve
+            : `- Rewrite the comment to sound clearer, more articulate.\n- Maintain the same idea and emotion.\n- Make it suitable for professional platforms.`;
+      } else {
+        // Use default with platform name
+        const platformName = this.getCurrentPlatform()
+          ? this.getCurrentPlatform().getPlatformName()
+          : "this platform";
+        improvePrompt = `Improve this comment and make it more thoughtful, clearer, and better suited for a professional conversation on ${platformName}.`;
+        improveGuideline = `- Rewrite the comment to sound clearer, more articulate.\n- Maintain the same idea and emotion.\n- Make it suitable for professional platforms.`;
+      }
+
+      const fullPrompt = `${improvePrompt}\n\nGuidelines:\n${improveGuideline}\n\nHere is my writeup:\n"${commentText}"`;
 
       const response = await fetch(
         "https://api.openai.com/v1/chat/completions",
@@ -208,6 +258,26 @@ Post:
       );
 
       const data = await response.json();
+
+      // Log the full response for debugging
+      console.log("🔧 Full OpenAI response:", data);
+
+      if (data.error) {
+        console.error(
+          "❌ OpenAI Improve API Error Details:",
+          JSON.stringify(data.error, null, 2)
+        );
+
+        // Show user-friendly alert based on error type
+        this.showOpenAIErrorAlert(data.error);
+
+        throw new Error(
+          `OpenAI API Error: ${data.error.message} (Type: ${
+            data.error.type || "unknown"
+          })`
+        );
+      }
+
       const rawImproved = data.choices?.[0]?.message?.content?.trim();
 
       if (rawImproved) {
@@ -220,6 +290,10 @@ Post:
 
         return { success: true, improvedText: cleanedImproved };
       } else {
+        console.error(
+          "❌ No content in improve response:",
+          JSON.stringify(data, null, 2)
+        );
         throw new Error("No improvement generated");
       }
     } catch (error) {
@@ -346,7 +420,7 @@ Post:
       dmSuggestion = platform.formatDM(
         dmSuggestion,
         authorName,
-        userProfileName
+        userProfileName || null
       );
     }
 
@@ -354,9 +428,60 @@ Post:
   }
 
   /**
+   * Show user-friendly alert for OpenAI API errors
+   */
+  showOpenAIErrorAlert(error) {
+    let title = "🤖 OpenAI API Error";
+    let message = "";
+    let action = "";
+
+    switch (error.code) {
+      case "insufficient_quota":
+        title = "💰 Quota Exceeded";
+        message = "Your OpenAI account has exceeded its quota.";
+        action =
+          "Please check your plan and billing details at platform.openai.com";
+        break;
+
+      case "invalid_api_key":
+        title = "🔑 Invalid API Key";
+        message = "The OpenAI API key is invalid or incorrect.";
+        action = "Please check your API key in the extension settings";
+        break;
+
+      case "rate_limit_exceeded":
+        title = "⏱️ Rate Limit Exceeded";
+        message = "You've exceeded the rate limit for API calls.";
+        action = "Please wait a few minutes and try again";
+        break;
+
+      case "model_not_found":
+        title = "🤖 Model Not Available";
+        message = "The selected model is not available on your account.";
+        action = "Please try switching to gpt-3.5-turbo in the extension popup";
+        break;
+
+      case "billing_not_active":
+        title = "💳 Billing Required";
+        message = "Your OpenAI account requires billing setup.";
+        action = "Please add a payment method at platform.openai.com";
+        break;
+
+      default:
+        title = "🤖 OpenAI API Error";
+        message = error.message || "An error occurred with the OpenAI API.";
+        action = "Please check your OpenAI account status";
+    }
+
+    const alertMessage = `${title}\n\n${message}\n\n💡 ${action}\n\nThis is not an issue with our extension - it's related to your OpenAI account.`;
+    alert(alertMessage);
+  }
+
+  /**
    * Make API request to OpenAI
    */
   async makeAPIRequest(prompt, apiKey, model) {
+    console.log("🚀 Making API request with model:", model);
     return fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {

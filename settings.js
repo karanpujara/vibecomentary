@@ -212,6 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   clearKeyBtn.addEventListener("click", () => {
     chrome.storage.local.remove("vibeOpenAIKey", () => {
+      // Clear both the input and the stored actualApiKey variable
+      actualApiKey = "";
       apiKeyInput.value = "";
       alert("🗑️ API key removed.");
     });

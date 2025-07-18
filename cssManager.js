@@ -55,25 +55,28 @@ class CSSManager {
     }
 
     const baseCSS = `
-      /* Base styles for all platforms */
+      /* UNIFIED MODAL DESIGN FOR ALL PLATFORMS */
+      /* Based on Farcaster's beautiful design */
       
-      /* Modal Container - positioned bottom-right like working backup */
+      /* Modal Container */
       #vibe-modal {
         position: fixed;
         bottom: 30px;
         right: 30px;
-        z-index: 999999;
-        background: white;
-        border: 2px solid #0073b1;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        padding: 16px;
+        top: auto;
+        left: auto;
+        transform: none;
         width: 420px;
-        max-width: 90vw;
-        max-height: 90vh;
-        overflow-y: auto;
+        max-height: 80vh;
+        border-radius: 8px;
+        border: 2px solid #8B5CF6;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        background: white;
+        z-index: 999999;
+        padding: 16px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         box-sizing: border-box;
+        overflow-y: auto;
       }
 
       /* Modal Header */
@@ -94,61 +97,83 @@ class CSSManager {
       }
 
       #vibe-close {
-        background: none;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-        color: #666;
-        padding: 4px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
+        background: none !important;
+        border: none !important;
+        font-size: 18px !important;
+        cursor: pointer !important;
+        color: #333 !important;
+        padding: 4px !important;
+        border-radius: 4px !important;
+        transition: background-color 0.2s !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
       }
 
       #vibe-close:hover {
-        background-color: #f0f0f0;
+        background-color: #f0f0f0 !important;
+        color: #333 !important;
       }
 
-      /* Close button specific styling */
-      #vibe-modal #vibe-close {
-        background: none;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-        color: #333;
-        padding: 4px;
-        border-radius: 4px;
-        transition: background-color 0.2s;
-      }
-
-      #vibe-modal #vibe-close:hover {
-        background-color: #f0f0f0;
-        color: #333;
-      }
-
-      /* Section Styling - ONLY for our extension */
-      #vibe-modal .improve-section,
-      #vibe-modal .tone-section,
-      #vibe-modal .dm-section {
-        margin-bottom: 16px;
-        padding: 12px;
-        background: #f8f9fa;
+      /* IMPROVE SECTION - Light Yellow */
+      #vibe-modal .improve-section {
+        background: #fef3c7;
+        border: 1px solid #fde68a;
         border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 20px;
+      }
+
+      /* TONE SECTION - Light Blue */
+      #vibe-modal .tone-section {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+
+      /* COMMENT BOXES - Light Gray */
+      #vibe-modal .vibe-comment {
+        background: #f8f9fa;
         border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 14px;
       }
 
-      /* Labels - ONLY for our extension */
-      #vibe-modal label {
-        font-weight: 600;
-        color: #333;
-        margin-bottom: 6px;
-        display: block;
+      /* DM SECTION - Light Purple */
+      #vibe-modal .dm-section {
+        background: #f3e8ff;
+        border: 1px solid #ddd6fe;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 16px;
+        margin-top: 16px;
       }
 
-      /* Form Elements - ONLY for our extension */
+      /* DM SECTION LABEL - Ensure black text */
+      #vibe-modal .dm-section > div:first-child {
+        color: #333 !important;
+        font-weight: bold !important;
+        margin-bottom: 6px !important;
+        font-size: 14px !important;
+      }
+
+      /* COMMENTS CONTAINER - Light Yellow */
+      #vibe-modal .vibe-comments {
+        background: #fef3c7;
+        border: 1px solid #fde68a;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+
+      /* FORM ELEMENTS */
       #vibe-modal textarea,
       #vibe-modal select {
         width: 100%;
-        padding: 7px;
+        padding: 8px;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 14px;
@@ -162,22 +187,68 @@ class CSSManager {
       #vibe-modal textarea:focus,
       #vibe-modal select:focus {
         outline: none;
-        border-color: #0073b1;
-        box-shadow: 0 0 0 2px rgba(0, 115, 177, 0.2);
+        border-color: #8B5CF6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
         color: #333 !important;
         background-color: #ffffff !important;
       }
 
-      #vibe-modal textarea[readonly] {
-        background-color: #ffffff !important;
+      /* SPECIFIC SELECT ELEMENT STYLING - Ensure visibility */
+      #vibe-modal #modalTone,
+      #vibe-modal select#modalTone {
         color: #333 !important;
-        cursor: text;
+        background-color: #ffffff !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #333 !important;
+        -webkit-text-stroke: none !important;
+        text-overflow: visible !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        line-height: 1.4 !important;
+        padding: 8px !important;
+        height: auto !important;
+        min-height: 36px !important;
       }
 
-      /* Buttons - ONLY for our extension elements (excluding close button) */
-      #vibe-modal button:not(#vibe-close),
-      #vibe-modal .copy-btn {
-        background: #0073b1;
+      #vibe-modal #modalTone option,
+      #vibe-modal select#modalTone option {
+        color: #333 !important;
+        background-color: #ffffff !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #333 !important;
+        -webkit-text-stroke: none !important;
+        padding: 4px 8px !important;
+        line-height: 1.4 !important;
+        white-space: normal !important;
+        text-overflow: visible !important;
+        overflow: visible !important;
+      }
+
+      /* OVERRIDE ANY PLATFORM-SPECIFIC SELECT STYLING */
+      #vibe-modal select,
+      #vibe-modal select *,
+      #vibe-modal #modalTone,
+      #vibe-modal #modalTone * {
+        color: #333 !important;
+        background-color: #ffffff !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
+        text-shadow: none !important;
+        -webkit-text-fill-color: #333 !important;
+        -webkit-text-stroke: none !important;
+        text-overflow: visible !important;
+        overflow: visible !important;
+        white-space: normal !important;
+        line-height: 1.4 !important;
+      }
+
+      /* BUTTONS */
+      #vibe-modal button:not(#vibe-close) {
+        background: #8B5CF6;
         color: white;
         border: none;
         padding: 8px 12px;
@@ -190,12 +261,84 @@ class CSSManager {
       }
 
       #vibe-modal button:hover {
-        background: #005a8b;
+        background: #7C3AED;
       }
 
-      #vibe-modal button:disabled {
-        background: #ccc;
-        cursor: not-allowed;
+      #vibe-modal .copy-btn {
+        background: #6c757d !important;
+        color: white !important;
+        border: none !important;
+        padding: 6px 12px !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        font-size: 12px !important;
+        margin-top: 6px !important;
+        margin-right: 8px !important;
+        transition: background-color 0.2s !important;
+        display: inline-block !important;
+        text-align: center !important;
+        user-select: none !important;
+        pointer-events: auto !important;
+        z-index: 1000 !important;
+      }
+
+      #vibe-modal .copy-btn:hover {
+        background: #5a6268 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+      }
+
+      #vibe-modal .copy-btn:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+      }
+
+      /* LABELS */
+      #vibe-modal label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 6px;
+        display: block;
+      }
+
+      /* EDITABLE CONTENT */
+      .editable-content {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        color: #333;
+        background-color: #ffffff;
+        min-height: 40px;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        cursor: text;
+        user-select: text;
+        box-sizing: border-box;
+      }
+
+      .editable-content:focus {
+        outline: none;
+        border-color: #8B5CF6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      }
+
+      /* UNIFIED TEXT SELECTION - Common for all platforms */
+      #vibe-modal ::selection,
+      #vibe-modal *::selection,
+      .editable-content::selection,
+      .editable-content *::selection {
+        background-color: #8B5CF6;
+        color: white;
+      }
+
+      #vibe-modal ::-moz-selection,
+      #vibe-modal *::-moz-selection,
+      .editable-content::-moz-selection,
+      .editable-content *::-moz-selection {
+        background-color: #8B5CF6;
+        color: white;
       }
 
       #vibe-modal .copy-btn {
@@ -254,7 +397,7 @@ class CSSManager {
       /* Platform-specific button - make it very specific */
       button.vibe-btn,
       .vibe-btn {
-        background-color: #0073b1 !important;
+        background-color: #8B5CF6 !important;
         color: white !important;
         border: none !important;
         border-radius: 4px !important;
@@ -342,6 +485,7 @@ class CSSManager {
 
     this.injectCSS(baseCSS, "vibe-base-css");
     this.injectedStyles.add("base");
+    console.log("🎨 Unified CSS injected successfully");
   }
 
   /**
@@ -359,60 +503,9 @@ class CSSManager {
       case "LinkedIn":
         platformCSS = `
           /* LinkedIn-specific styles - scoped to our extension only */
+          /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
+          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
           
-          /* LinkedIn modal positioning */
-          #vibe-modal {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            top: auto;
-            left: auto;
-            transform: none;
-            width: 420px;
-            max-height: 80vh;
-          }
-
-          /* LinkedIn-specific content styling */
-          #vibe-modal .vibe-comment {
-            background: #f5f5f5;
-            border: 1px solid #d1ecf1;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 14px;
-          }
-
-          #vibe-modal .dm-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 16px;
-          }
-
-          #vibe-modal .dm-section > div:first-child {
-            color: #495057;
-            font-weight: 600;
-            margin-bottom: 8px;
-          }
-
-          /* LinkedIn tone section */
-          #vibe-modal .tone-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
-          }
-
-          /* LinkedIn improve section */
-          #vibe-modal .improve-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 20px;
-          }
-
           /* LinkedIn responsive adjustments */
           @media (max-width: 768px) {
             #vibe-modal {
@@ -428,149 +521,28 @@ class CSSManager {
       case "X (Twitter)":
         platformCSS = `
           /* X (Twitter) specific styles - scoped to our extension only */
+          /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
+          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
           
-          /* X modal positioning - same as LinkedIn (bottom-right) */
-          #vibe-modal {
-            position: fixed !important;
-            bottom: 30px !important;
-            right: 30px !important;
-            top: auto !important;
-            left: auto !important;
-            transform: none !important;
-            width: 420px !important;
-            max-height: 80vh !important;
-            border-radius: 8px !important;
-            border: 2px solid #0073b1 !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-            background: white !important;
-            z-index: 999999 !important;
+          /* X responsive adjustments */
+          @media (max-width: 768px) {
+            #vibe-modal {
+              bottom: 20px;
+              right: 20px;
+              width: calc(100vw - 40px);
+              max-width: 400px;
+            }
           }
+        `;
+        break;
 
-          /* X-specific content styling - same as LinkedIn */
-          #vibe-modal .vibe-comment {
-            background: #f5f5f5;
-            border: 1px solid #d1ecf1;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 14px;
-          }
-
-          #vibe-modal .dm-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 16px;
-          }
-
-          #vibe-modal .dm-section > div:first-child {
-            color: #495057;
-            font-weight: 600;
-            margin-bottom: 8px;
-          }
-
-          /* X tone section - same as LinkedIn */
-          #vibe-modal .tone-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 12px;
-          }
-
-          /* X improve section - same as LinkedIn */
-          #vibe-modal .improve-section {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 20px;
-          }
-
-          /* X-specific button styling - same as LinkedIn */
-          #vibe-modal button {
-            background: #0073b1;
-            border-radius: 4px;
-            font-weight: 500;
-            padding: 6px 10px;
-          }
-
-          /* X button positioning and styling */
-          .x-twitter .vibe-btn {
-            background-color: #0073b1 !important;
-            color: white !important;
-            border: none !important;
-            border-radius: 4px !important;
-            padding: 6px 10px !important;
-            margin: 0 !important;
-            cursor: pointer !important;
-            font-size: 14px !important;
-            font-weight: 500 !important;
-            transition: background-color 0.2s !important;
-            z-index: 1000 !important;
-            display: inline-block !important;
-          }
-
-          .x-twitter .vibe-btn:hover {
-            background-color: #005a8b !important;
-          }
-
-          #vibe-modal button:hover {
-            background: #005a8b;
-          }
-
-          #vibe-modal .copy-btn {
-            background: #6c757d !important;
-            border-radius: 4px !important;
-            color: white !important;
-            border: none !important;
-            padding: 6px 12px !important;
-            cursor: pointer !important;
-            font-size: 12px !important;
-            margin-top: 6px !important;
-            margin-right: 8px !important;
-            transition: background-color 0.2s !important;
-          }
-
-          #vibe-modal #copy-dm {
-            background: #6c757d !important;
-            border-radius: 4px !important;
-            color: white !important;
-            border: none !important;
-            padding: 6px 12px !important;
-            cursor: pointer !important;
-            font-size: 12px !important;
-            margin-top: 6px !important;
-            margin-right: 8px !important;
-            transition: background-color 0.2s !important;
-          }
-
-          #vibe-modal .copy-btn:hover {
-            background: #5a6268 !important;
-          }
-
-          #vibe-modal #copy-dm:hover {
-            background: #5a6268 !important;
-          }
-
-          /* X form elements - same as LinkedIn */
-          #vibe-modal textarea,
-          #vibe-modal select {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #ffffff !important;
-            color: #333 !important;
-          }
-
-          #vibe-modal textarea:focus,
-          #vibe-modal select:focus {
-            border-color: #0073b1;
-            box-shadow: 0 0 0 2px rgba(0, 115, 177, 0.2);
-            color: #333 !important;
-            background: #ffffff !important;
-          }
-
-          /* X responsive adjustments - same as LinkedIn */
+      case "Farcaster":
+        platformCSS = `
+          /* Farcaster-specific styles - scoped to our extension only */
+          /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
+          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
+          
+          /* Farcaster responsive adjustments */
           @media (max-width: 768px) {
             #vibe-modal {
               bottom: 20px;
@@ -590,6 +562,7 @@ class CSSManager {
     if (platformCSS) {
       this.injectCSS(platformCSS, `vibe-${platformName.toLowerCase()}-css`);
       this.injectedStyles.add(`platform-${platformName}`);
+      console.log(`🎨 Platform CSS injected for: ${platformName}`);
     }
   }
 

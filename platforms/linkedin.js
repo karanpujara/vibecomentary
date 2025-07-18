@@ -62,21 +62,26 @@ class LinkedInPlatform extends BasePlatform {
   extractAuthorName(post) {
     this.log("🔍 Attempting to extract author name...");
 
-    const authorSelectors = [
+    // Look specifically for the actual post author, avoiding engagement text
+    const primaryAuthorSelectors = [
+      // Target the main post author container (not engagement text)
+      ".update-components-actor__title .vkuIMwJqnfPHDzHlNmoKRlkfXcRjORP",
+      ".update-components-actor__title span",
+      ".update-components-actor__title",
+
+      // Look for the main post author link
+      ".update-components-actor__meta-link .update-components-actor__title",
+      ".update-components-actor__meta-link",
+
+      // Fallback to general actor selectors
       ".feed-shared-actor__name",
-      '[data-test-id="post-author"]',
       ".feed-shared-actor__name-link",
-      ".post-author",
-      ".author-name",
+      '[data-test-id="post-author"]',
       '[data-test-id="author-name"]',
-      ".feed-shared-actor__name a",
-      ".feed-shared-actor__name span",
-      ".feed-shared-actor__name strong",
-      ".feed-shared-actor__name b",
     ];
 
     let nameElem = null;
-    for (const selector of authorSelectors) {
+    for (const selector of primaryAuthorSelectors) {
       nameElem = post.querySelector(selector);
       if (nameElem) {
         this.log(`✅ Found author element with selector: ${selector}`);
@@ -88,16 +93,165 @@ class LinkedInPlatform extends BasePlatform {
     if (nameElem) {
       fullName = nameElem.innerText.trim();
       this.log(`📝 Raw author name: "${fullName}"`);
+
+      // Additional validation: check if this looks like a real author name
+      if (this.isValidAuthorName(fullName)) {
+        this.log(`✅ Valid author name found: "${fullName}"`);
+      } else {
+        this.log(`⚠️ Potentially invalid author name, trying fallback...`);
+        fullName = this.findNameInPostHeader(post);
+      }
     } else {
-      this.log("❌ No author element found with any selector");
+      this.log("❌ No author element found with primary selectors");
       fullName = this.findNameInPostHeader(post);
+    }
+
+    // Final validation: make sure we didn't pick up engagement text
+    if (fullName && this.containsEngagementText(fullName)) {
+      this.log(
+        `⚠️ Name contains engagement text, trying alternative extraction...`
+      );
+      fullName = this.findAlternativeAuthorName(post);
     }
 
     return this.processAuthorName(fullName);
   }
 
+  containsEngagementText(text) {
+    const engagementPatterns = [
+      /likes?\s+this/i,
+      /and\s+\d+\s+others/i,
+      /reposted/i,
+      /shared/i,
+      /commented/i,
+      /celebrates/i,
+      /congratulates/i,
+    ];
+
+    return engagementPatterns.some((pattern) => pattern.test(text));
+  }
+
+  findAlternativeAuthorName(post) {
+    this.log("🔄 Trying alternative author name extraction...");
+
+    // Look specifically for the actual post author area, avoiding engagement text
+    const authorArea =
+      post.querySelector(".update-components-actor") ||
+      post.querySelector(".feed-shared-actor") ||
+      post;
+
+    // Look for the first valid name that's not engagement text
+    const allTextElements = authorArea.querySelectorAll(
+      "a, span, div, strong, b"
+    );
+
+    for (const element of allTextElements) {
+      const text = element.textContent?.trim();
+      if (
+        text &&
+        this.isValidAuthorName(text) &&
+        !this.containsEngagementText(text)
+      ) {
+        // Additional check: make sure it's not just a single word from engagement
+        const words = text.split(" ").filter((w) => w.length > 0);
+        if (words.length >= 1 && words[0].length >= 3) {
+          this.log(`✅ Found alternative author name: "${text}"`);
+          return text;
+        }
+      }
+    }
+
+    this.log("❌ No alternative author name found");
+    return "";
+  }
+
+  isValidAuthorName(name) {
+    // Check if the name looks like a real person's name
+    if (!name || name.length < 2 || name.length > 50) return false;
+
+    // Should start with a capital letter
+    if (!/^[A-Z]/.test(name)) return false;
+
+    // Should contain only letters, spaces, and common name characters
+    if (!/^[A-Za-z\s\-'\.]+$/.test(name)) return false;
+
+    // Should not contain common non-name words
+    const nonNameWords = [
+      "celebrates",
+      "congratulates",
+      "thanks",
+      "shares",
+      "posted",
+      "wrote",
+      "LinkedIn",
+      "Messaging",
+      "Network",
+      "Jobs",
+      "Notifications",
+      "Work",
+      "Learning",
+      "Follow",
+      "Connect",
+      "View",
+      "profile",
+      "post",
+      "comment",
+      "likes",
+      "this",
+      "and",
+      "others",
+      "reposted",
+      "shared",
+      "commented",
+    ];
+
+    if (
+      nonNameWords.some((word) =>
+        name.toLowerCase().includes(word.toLowerCase())
+      )
+    ) {
+      return false;
+    }
+
+    // Additional check: avoid single words that might be from engagement text
+    const words = name.split(" ").filter((w) => w.length > 0);
+    if (words.length === 1 && words[0].length < 4) {
+      return false;
+    }
+
+    return true;
+  }
+
   findNameInPostHeader(post) {
     this.log("🔄 Trying fallback author name extraction...");
+
+    // Look for the most likely author elements first
+    const prioritySelectors = [
+      // Look for profile links that indicate the post author
+      "a[href*='/in/']",
+      ".feed-shared-actor a[href*='/in/']",
+      ".post-author a[href*='/in/']",
+
+      // Look for elements with specific classes that indicate author
+      ".feed-shared-actor__name",
+      ".post-author",
+      ".author-name",
+    ];
+
+    for (const selector of prioritySelectors) {
+      const elements = post.querySelectorAll(selector);
+      for (const element of elements) {
+        const text = element.textContent?.trim();
+        if (text && this.isValidAuthorName(text)) {
+          this.log(
+            `✅ Found author name with priority selector ${selector}: "${text}"`
+          );
+          return text;
+        }
+      }
+    }
+
+    // Fallback: look for any text that looks like a name
     const headerElements = post.querySelectorAll("a, span, div, strong, b");
 
     for (const element of headerElements) {
@@ -106,29 +260,15 @@ class LinkedInPlatform extends BasePlatform {
         text &&
         text.length > 2 &&
         text.length < 50 &&
-        /^[A-Z][a-z]+/.test(text)
+        /^[A-Z][a-z]+/.test(text) &&
+        this.isValidAuthorName(text)
       ) {
-        const commonTexts = [
-          "LinkedIn",
-          "Messaging",
-          "Network",
-          "Jobs",
-          "Notifications",
-          "Work",
-          "Learning",
-          "Follow",
-          "Connect",
-        ];
-
-        if (!commonTexts.some((common) => text.includes(common))) {
-          const nameMatch = text.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
-          if (nameMatch) {
-            this.log(`✅ Found author name in fallback: "${nameMatch[1]}"`);
-            return nameMatch[1];
-          }
-        }
+        this.log(`✅ Found author name in fallback: "${text}"`);
+        return text;
       }
     }
+
+    this.log("❌ No valid author name found in fallback");
     return "";
   }
 
