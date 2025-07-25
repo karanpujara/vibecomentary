@@ -51,6 +51,16 @@ class AIService {
         ? platform.extractUserProfileName()
         : "Your Name";
 
+      // Debug logging for author name extraction
+      console.log("🔍 Author name extraction debug:");
+      console.log(
+        "📝 Platform:",
+        platform ? platform.getPlatformName() : "None"
+      );
+      console.log("👤 Extracted author name:", authorName);
+      console.log("👤 User profile name:", userProfileName);
+      console.log("📄 Post element:", postEl || this.activePostElement);
+
       // Handle null userProfileName gracefully
       const safeUserProfileName = userProfileName || "Your Name";
 
@@ -92,10 +102,21 @@ class AIService {
         firstNameWithPrefix
       );
 
+      // Debug logging for author name processing
+      console.log("🔍 Author name processing debug:");
+      console.log("👤 Raw author name:", authorName);
+      console.log("👤 Processed firstNameWithPrefix:", firstNameWithPrefix);
+      console.log("📋 Guideline with replacement:", guideline);
+
       const finalPrompt = `${prompt}
 
 Guidelines:
 ${guideline}
+
+IMPORTANT: 
+- When addressing the author, use "${firstNameWithPrefix}" (the author's name) and NOT any names mentioned in the post content.
+- Do NOT mention comment generation, AI tools, or the fact that you're generating comments.
+- Focus on the post content and respond naturally as if you're a real person commenting.
 
 Please format your response with each comment on a separate line, separated by a blank line.
 
@@ -106,13 +127,21 @@ Post:
       const platformName = platform
         ? platform.getPlatformName()
         : "this platform";
-      const dmPrompt = `Write a short DM message I can send to ${firstNameWithPrefix} on ${platformName} in a "${tone}" tone. Be human, brief, and relevant to the post. 
+      const dmPrompt = `Write a short, personalized DM message I can send to ${firstNameWithPrefix} on ${platformName} in a "${tone}" tone. 
 
-IMPORTANT: Start the message with "Hello ${firstNameWithPrefix}, " followed immediately by the main content on the same line. Do not add line breaks after the greeting. Keep it compact since only the first 2 lines are visible in DM preview.
+IMPORTANT INSTRUCTIONS:
+- Do NOT repeat the post content verbatim
+- Create a genuine, personal message that relates to their post
+- Start with "Hello ${firstNameWithPrefix}, " followed by your message on the same line
+- Keep it brief and conversational
+- End with a line break, then "Best," on a new line, then "${safeUserProfileName}" on the next line
 
-End the message with a line break, then "Best," on a new line, then "${safeUserProfileName}" on the next line.
+Example format:
+Hello ${firstNameWithPrefix}, [your personal message here]
+Best,
+${safeUserProfileName}
 
-Post:
+Post they shared:
 "${postText}"`;
 
       console.log("🤖 Sending requests to OpenAI...");
@@ -177,9 +206,73 @@ Post:
           userProfileName
         );
 
+        // Process DM content properly
+        let processedDm = "No DM suggestion found.";
+        if (dmContent) {
+          // Clean the DM content similar to how we clean improved comments
+          processedDm = this.cleanImprovedText(dmContent);
+
+          // Additional DM-specific cleaning
+          processedDm = processedDm
+            .replace(/^(DM|Direct Message|Message):\s*/gi, "") // Remove DM labels
+            .replace(
+              /^(Here's a DM|Here's a message|Here's a direct message):\s*/gi,
+              ""
+            ) // Remove introductory text
+            .trim();
+
+          // Clean up any remaining variables in DM content
+          processedDm = processedDm.replace(
+            /\$\{firstNameWithPrefix\}/g,
+            firstNameWithPrefix
+          );
+          processedDm = processedDm.replace(
+            /\$\{authorName\}/g,
+            firstNameWithPrefix
+          );
+          processedDm = processedDm.replace(
+            /\$\{userName\}/g,
+            firstNameWithPrefix
+          );
+
+          // Check if the DM is just repeating the post content
+          const postTextLower = postText.toLowerCase().trim();
+          const dmLower = processedDm.toLowerCase().trim();
+
+          // If DM contains more than 70% of the post text, it's likely just repeating
+          const postWords = postTextLower
+            .split(/\s+/)
+            .filter((word) => word.length > 2);
+          const dmWords = dmLower
+            .split(/\s+/)
+            .filter((word) => word.length > 2);
+
+          if (postWords.length > 0 && dmWords.length > 0) {
+            const matchingWords = postWords.filter((word) =>
+              dmWords.includes(word)
+            );
+            const similarityRatio = matchingWords.length / postWords.length;
+
+            if (similarityRatio > 0.7) {
+              console.log(
+                "⚠️ DM appears to be repeating post content, using fallback"
+              );
+              processedDm = "No DM suggestion found.";
+            }
+          }
+
+          // If the cleaned DM is empty or too short, use fallback
+          if (!processedDm || processedDm.length < 5) {
+            processedDm = "No DM suggestion found.";
+          }
+        }
+
+        console.log("📝 Raw DM content:", dmContent);
+        console.log("✨ Processed DM content:", processedDm);
+
         return {
           comments: parsed.comments,
-          dmSuggestion: dmContent || "No DM suggestion found.",
+          dmSuggestion: processedDm,
           success: true,
         };
       } catch (err) {
@@ -327,6 +420,12 @@ Post:
     cleaned = cleaned.replace(/\*(.*?)\*/g, "$1"); // Remove italic
     cleaned = cleaned.replace(/`(.*?)`/g, "$1"); // Remove code blocks
 
+    // Clean up any remaining variable placeholders that might have been generated literally
+    cleaned = cleaned.replace(/\$\{firstNameWithPrefix\}/g, "the author");
+    cleaned = cleaned.replace(/\$\{authorName\}/g, "the author");
+    cleaned = cleaned.replace(/\$\{platformName\}/g, "this platform");
+    cleaned = cleaned.replace(/\$\{tone\}/g, "this tone");
+
     // Remove extra whitespace and normalize
     cleaned = cleaned.replace(/\s+/g, " ").trim();
 
@@ -411,6 +510,25 @@ Post:
 
     // For DM, we'll handle it separately since it comes from a different API call
     let dmSuggestion = "";
+
+    // Clean up any remaining variables in comments
+    comments = comments.map((comment) => {
+      // Replace any remaining ${firstNameWithPrefix} variables with the actual author name
+      let cleanedComment = comment.replace(
+        /\$\{firstNameWithPrefix\}/g,
+        authorName
+      );
+
+      // Also replace any other common variable patterns
+      cleanedComment = cleanedComment.replace(/\$\{authorName\}/g, authorName);
+      cleanedComment = cleanedComment.replace(/\$\{userName\}/g, authorName);
+
+      console.log("🔧 Comment variable replacement:");
+      console.log("📝 Original:", comment);
+      console.log("✨ Cleaned:", cleanedComment);
+
+      return cleanedComment;
+    });
 
     // Format comments and DM using platform-specific formatting
     if (platform) {
@@ -581,7 +699,8 @@ Post:
       Contribution: "Write 2 comments that contribute fresh insights.",
       "Disagreement - Contrary": "Write 2 respectful comments that disagree.",
       Criticism: "Write 2 polite and professional criticisms.",
-      "Funny Sarcastic": "Write 2 playful, witty comments.",
+      "Funny Sarcastic":
+        "Write 2 clever, sarcastic comments that respond to the post content with humor. Make jokes about the topic, not about comment generation.",
       "Perspective (Why / What / How)":
         "Write 2 comments that add thoughtful perspectives.",
       "Professional Industry Specific": "Write 2 expert-level comments.",
@@ -614,7 +733,7 @@ Post:
       Criticism:
         "- Keep it constructive.\n- Point out gaps politely.\n- Mention the author respectfully.",
       "Funny Sarcastic":
-        "- Add humor or wit.\n- Keep it lighthearted.\n- Tag the author for effect.",
+        "- Make clever jokes about the post content.\n- Use sarcasm or wit related to the topic.\n- Do NOT mention comment generation or AI tools.\n- Keep it lighthearted and relevant to the post.",
       "Perspective (Why / What / How)":
         '- Ask "why", "what", or "how" questions.\n- Expand the conversation.\n- Mention the author at start.',
       "Professional Industry Specific":

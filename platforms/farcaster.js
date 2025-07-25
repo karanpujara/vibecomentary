@@ -54,28 +54,47 @@ class FarcasterPlatform extends BasePlatform {
 
       posts = allRelativeDivs;
       const filteredPosts = Array.from(posts).filter((post) => {
-        // Must have engagement row
+        // Must have engagement row OR be the original post in a conversation
         const hasEngagement = post.querySelector(
           ".mr-4.mt-3.flex.flex-row.items-center"
         );
+
+        // Check if this might be the original post (has more engagement metrics)
+        const hasOriginalPostEngagement = post.querySelector(
+          '[class*="flex"][class*="items-center"]'
+        );
+
         // Must have substantial content (not just empty divs)
         const hasSubstantialContent = (post.textContent?.length || 0) > 20;
         // Must not be a nested relative div (should be a top-level post)
         const isTopLevel = !post.parentElement?.classList.contains("relative");
-        // Must have a cast ID (indicates it's a real post)
+        // Must have a cast ID (indicates it's a real post) OR be the first post in conversation
         const hasCastId = post.id && post.id.startsWith("cast:");
+
+        // Check if this is the first post in the conversation (original post)
+        const isFirstPost =
+          post ===
+          post.parentElement?.querySelector(
+            'div[class*="relative"]:first-child'
+          );
 
         console.log(`🔍 Checking div:`, {
           element: post,
           classes: post.className,
           hasEngagement,
+          hasOriginalPostEngagement,
           hasSubstantialContent,
           isTopLevel,
           hasCastId,
+          isFirstPost,
           textLength: post.textContent?.length || 0,
         });
 
-        return hasEngagement && hasSubstantialContent && isTopLevel;
+        return (
+          (hasEngagement || hasOriginalPostEngagement) &&
+          hasSubstantialContent &&
+          isTopLevel
+        );
       });
 
       if (filteredPosts.length > 0) {
@@ -171,10 +190,38 @@ class FarcasterPlatform extends BasePlatform {
       }
     }
 
-    // Strategy 4: Last resort - look for any div with engagement that we might have missed
+    // Strategy 4: Look specifically for the original post in conversation threads
+    if (posts.length === 0 || posts.length === 1) {
+      console.log(
+        "🔍 Strategy 4: Looking for original post in conversation threads"
+      );
+
+      // Look for the main conversation container
+      const conversationContainer =
+        document.querySelector('[class*="conversation"]') ||
+        document.querySelector('[class*="thread"]') ||
+        document.querySelector("main");
+
+      if (conversationContainer) {
+        // Find the first post in the conversation (original post)
+        const firstPost =
+          conversationContainer.querySelector(
+            'div[class*="relative"]:first-child'
+          ) ||
+          conversationContainer.querySelector("article:first-child") ||
+          conversationContainer.querySelector('[class*="post"]:first-child');
+
+        if (firstPost && !posts.includes(firstPost)) {
+          console.log("✅ Found original post in conversation:", firstPost);
+          posts = [firstPost, ...posts];
+        }
+      }
+    }
+
+    // Strategy 5: Last resort - look for any div with engagement that we might have missed
     if (posts.length === 0) {
       console.log(
-        "🔍 Strategy 4: Last resort search for any engagement-containing divs"
+        "🔍 Strategy 5: Last resort search for any engagement-containing divs"
       );
       const allDivs = document.querySelectorAll("div");
       const potentialPosts = Array.from(allDivs).filter((div) => {
@@ -219,34 +266,250 @@ class FarcasterPlatform extends BasePlatform {
   }
 
   extractPostText(post) {
-    // Look for the text content in the post
-    const textElement = post.querySelector(
-      '.line-clamp-feed, [class*="text-base"], [class*="leading-5"]'
-    );
-    if (textElement) {
-      const text = textElement.textContent || textElement.innerText;
-      if (text && text.trim().length > 0) {
-        return text.trim().slice(0, 320);
+    console.log("🔍 Extracting post text from Farcaster post...");
+
+    // Strategy 1: Look for the main text content in the post with better targeting
+    const textSelectors = [
+      '[class*="text-base"]',
+      '[class*="leading-5"]',
+      '[class*="line-clamp"]',
+      'div[class*="text"]',
+      "p",
+      'span[class*="text"]',
+      // More specific Farcaster selectors
+      '[class*="whitespace-pre-wrap"]',
+      '[class*="break-words"]',
+    ];
+
+    for (const selector of textSelectors) {
+      const textElements = post.querySelectorAll(selector);
+      for (const element of textElements) {
+        const text = element.textContent || element.innerText;
+        if (text && text.trim().length > 10 && text.trim().length < 500) {
+          // More sophisticated filtering - allow @ mentions but exclude timestamps and usernames
+          const trimmedText = text.trim();
+
+          // Skip if this looks like just a username or timestamp
+          if (
+            !trimmedText.match(/^[a-zA-Z0-9._]+$/i) && // Not just a username
+            !trimmedText.match(/^\d+[hdw] ago$/i) && // Not just a timestamp
+            !trimmedText.match(/^@[a-zA-Z0-9._]+$/i) && // Not just a single @ mention
+            trimmedText.split(" ").length > 3 // Has multiple words
+          ) {
+            console.log("✅ Found post text:", trimmedText);
+            return trimmedText.slice(0, 320);
+          }
+        }
       }
     }
 
-    // Fallback: get all text from the post
+    // Strategy 2: Look for text in the main post container with better filtering
+    const mainContainer = post.querySelector(".relative.flex.flex-col");
+    if (mainContainer) {
+      const textElements = mainContainer.querySelectorAll("div, p, span");
+      for (const element of textElements) {
+        const text = element.textContent || element.innerText;
+        if (text && text.trim().length > 10 && text.trim().length < 500) {
+          const trimmedText = text.trim();
+
+          // Skip usernames, timestamps, and engagement text
+          if (
+            !trimmedText.match(/^\d+[hdw] ago$/i) && // Not just timestamp
+            !trimmedText.match(/^\d+ comments?$/i) && // Not just comment count
+            !trimmedText.match(/^\d+ recasts?$/i) && // Not just recast count
+            !trimmedText.match(/^\d+ likes?$/i) && // Not just like count
+            !trimmedText.match(/^@[a-zA-Z0-9._]+$/i) && // Not just single @ mention
+            trimmedText.split(" ").length > 3 // Has multiple words
+          ) {
+            console.log("✅ Found post text in main container:", trimmedText);
+            return trimmedText.slice(0, 320);
+          }
+        }
+      }
+    }
+
+    // Strategy 3: Get all text and filter out non-content more intelligently
     const allText = post.textContent || post.innerText;
-    return allText.slice(0, 320);
+    const lines = allText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(
+        (line) =>
+          line.length > 15 && // Longer minimum length
+          line.length < 300 && // Shorter maximum to avoid getting too much
+          !line.match(/^\d+[hdw] ago$/i) && // Not just timestamp
+          !line.match(/^\d+ comments?$/i) && // Not just comment count
+          !line.match(/^\d+ recasts?$/i) && // Not just recast count
+          !line.match(/^\d+ likes?$/i) && // Not just like count
+          !line.match(/^@[a-zA-Z0-9._]+$/i) && // Not just single @ mention
+          line.split(" ").length > 3 && // Has multiple words
+          !line.includes("recasted by") && // Not recast text
+          !line.includes("from") // Not from text
+      );
+
+    if (lines.length > 0) {
+      console.log("✅ Found post text from filtered lines:", lines[0]);
+      return lines[0].slice(0, 320);
+    }
+
+    console.log("❌ No post text found");
+    return "No content available";
   }
 
   extractAuthorName(post) {
-    // Look for the author name in the post
-    const authorElement = post.querySelector(
-      'a[href^="/"][class*="font-semibold"], a[href^="/"][class*="text-inherit"]'
-    );
-    if (authorElement) {
-      const authorName = authorElement.textContent || authorElement.innerText;
-      if (authorName && authorName.trim().length > 0) {
-        return authorName.trim();
+    console.log("🔍 Extracting author name from Farcaster post...");
+
+    // Strategy 1: Look for the original creator (not recaster)
+    // In Farcaster, recasts show "recasted by X from Y" - we want Y (original creator)
+    const recastText = post.textContent || post.innerText;
+    const recastMatch = recastText.match(/recasted by .+ from (.+)/i);
+    if (recastMatch) {
+      const originalCreator = recastMatch[1].trim();
+      console.log("✅ Found original creator from recast:", originalCreator);
+      return originalCreator;
+    }
+
+    // Strategy 2: Look for "from" pattern in text
+    const fromMatch = recastText.match(/from (.+?)(?:\s|$)/i);
+    if (fromMatch) {
+      const originalCreator = fromMatch[1].trim();
+      console.log(
+        "✅ Found original creator from 'from' pattern:",
+        originalCreator
+      );
+      return originalCreator;
+    }
+
+    // Strategy 3: Look for the main post author in the header area (most reliable)
+    const headerSelectors = [
+      // Look for the main post header area
+      '[class*="flex"][class*="justify-between"]',
+      '[class*="flex"][class*="items-center"]',
+      // More specific Farcaster selectors
+      '[class*="mr-4"][class*="flex"][class*="flex-row"]',
+      '[class*="flex"][class*="flex-row"][class*="justify-between"]',
+    ];
+
+    for (const headerSelector of headerSelectors) {
+      const headerElement = post.querySelector(headerSelector);
+      if (headerElement) {
+        // Look for author links in the header
+        const authorLinks = headerElement.querySelectorAll('a[href^="/"]');
+        for (const link of authorLinks) {
+          const authorName = link.textContent?.trim();
+          if (authorName && authorName.length > 0 && authorName.length < 50) {
+            // Skip if this looks like a recaster indicator
+            if (
+              !authorName.includes("recasted") &&
+              !authorName.includes("from")
+            ) {
+              console.log("✅ Found main post author in header:", authorName);
+              return authorName;
+            }
+          }
+        }
       }
     }
 
+    // Strategy 4: Look for author links with better targeting
+    const authorSelectors = [
+      'a[href^="/"][class*="font-semibold"]',
+      'a[href^="/"][class*="text-inherit"]',
+      'a[href^="/"]',
+      '[class*="font-semibold"] a[href^="/"]',
+      // Add more specific selectors for Farcaster
+      'a[href*="/profile"]',
+      'a[href*="/user"]',
+      '[data-testid="user-name"]',
+      '[class*="username"]',
+    ];
+
+    const allAuthorLinks = [];
+    for (const selector of authorSelectors) {
+      const authorElements = post.querySelectorAll(selector);
+      for (const element of authorElements) {
+        const authorName = element.textContent || element.innerText;
+        if (
+          authorName &&
+          authorName.trim().length > 0 &&
+          authorName.trim().length < 50
+        ) {
+          // Skip if this looks like a recaster indicator
+          if (
+            !authorName.includes("recasted") &&
+            !authorName.includes("from")
+          ) {
+            // Check if this is in a like notification (skip these)
+            const isInLikeNotification =
+              element.closest(".mb-px.flex.flex-row.items-center") !== null;
+
+            // Check if this is the main post author (in the post header area)
+            const isMainPostAuthor =
+              element.closest(".mr-4.flex.flex-row.justify-between") !== null ||
+              element.closest('[class*="flex"][class*="justify-between"]') !==
+                null;
+
+            // Check if this looks like a proper Farcaster username
+            const isProperUsername =
+              /\.(eth|base|polygon|arbitrum|optimism|zora)$/i.test(
+                authorName
+              ) ||
+              authorName.includes(".") ||
+              authorName.length > 5;
+
+            // Check if this username is mentioned in the post content (should be excluded)
+            const postText = post.textContent || post.innerText;
+            const isMentionedInContent =
+              postText.includes(`@${authorName}`) ||
+              postText.includes(authorName);
+
+            allAuthorLinks.push({
+              name: authorName.trim(),
+              element: element,
+              isInLikeNotification: isInLikeNotification,
+              isMainPostAuthor: isMainPostAuthor,
+              isProperUsername: isProperUsername,
+              isMentionedInContent: isMentionedInContent,
+            });
+          }
+        }
+      }
+    }
+
+    // Prioritize main post authors (original creator) FIRST
+    const mainPostAuthors = allAuthorLinks.filter(
+      (link) => link.isMainPostAuthor && !link.isInLikeNotification
+    );
+    if (mainPostAuthors.length > 0) {
+      console.log("✅ Found main post author:", mainPostAuthors[0].name);
+      return mainPostAuthors[0].name;
+    }
+
+    // Then prioritize proper usernames (but only if they're not in post content)
+    const properUsernames = allAuthorLinks.filter(
+      (link) =>
+        link.isProperUsername &&
+        !link.isInLikeNotification &&
+        !link.isMentionedInContent
+    );
+    if (properUsernames.length > 0) {
+      console.log(
+        "✅ Found proper username (not in content):",
+        properUsernames[0].name
+      );
+      return properUsernames[0].name;
+    }
+
+    // Last fallback to any author found (excluding like notifications and content mentions)
+    const validAuthors = allAuthorLinks.filter(
+      (link) => !link.isInLikeNotification && !link.isMentionedInContent
+    );
+    if (validAuthors.length > 0) {
+      console.log("✅ Found author as fallback:", validAuthors[0].name);
+      return validAuthors[0].name;
+    }
+
+    console.log("❌ No author name found, using fallback");
     return "Unknown";
   }
 
@@ -525,7 +788,7 @@ class FarcasterPlatform extends BasePlatform {
       Criticism:
         "Write 2 polite Farcaster replies that point out gaps. Keep it constructive and brief.",
       "Funny Sarcastic":
-        "Write 2 playful, witty Farcaster replies. Keep it clever and brief.",
+        "Write 2 clever, sarcastic Farcaster replies that respond to the post content with humor. Make jokes about the topic, not about comment generation. Keep it witty and brief.",
       "Perspective (Why / What / How)":
         "Write 2 Farcaster replies that add thoughtful perspectives. Keep it brief.",
       "Professional Industry Specific":
@@ -557,7 +820,7 @@ class FarcasterPlatform extends BasePlatform {
       Criticism:
         "- Keep it constructive.\n- Only mention @${firstNameWithPrefix} when directly addressing them.\n- Keep it under 320 characters.",
       "Funny Sarcastic":
-        "- Add humor or wit.\n- Only mention @${firstNameWithPrefix} when directly addressing them.\n- Keep it under 320 characters.",
+        "- Make clever jokes about the post content.\n- Use sarcasm or wit related to the topic.\n- Do NOT mention comment generation or AI tools.\n- Only mention @${firstNameWithPrefix} when directly addressing them.\n- Keep it under 320 characters.",
       "Perspective (Why / What / How)":
         '- Ask "why", "what", or "how" questions.\n- Only mention @${firstNameWithPrefix} when directly addressing them.\n- Keep it under 320 characters.',
       "Professional Industry Specific":

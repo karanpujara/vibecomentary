@@ -89,7 +89,7 @@ class BasePlatform {
       Contribution: "📚",
       "Disagreement - Contrary": "⚡",
       Criticism: "🧐",
-      "Funny Sarcastic": "😏",
+      "Funny Sarcastic": "🤪",
       "Perspective (Why / What / How)": "🔍",
       "Professional Industry Specific": "🏢",
     };

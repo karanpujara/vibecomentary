@@ -93,10 +93,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const storedGuidelines = result.toneGuidelines || {};
 
       Object.keys(defaultTonePrompts).forEach((tone) => {
+        // Create prompt label
+        const promptLabel = document.createElement("label");
+        promptLabel.innerText = "Write a prompt:";
+        promptLabel.style.fontWeight = "bold";
+        promptLabel.style.fontSize = "14px";
+        promptLabel.style.marginBottom = "6px";
+        promptLabel.style.display = "block";
+
         const promptTextarea = document.createElement("textarea");
         promptTextarea.id = `prompt-${tone}`;
         promptTextarea.placeholder = `Prompt for ${tone}`;
         promptTextarea.value = storedPrompts[tone] || defaultTonePrompts[tone];
+
+        // Create guideline label
+        const guidelineLabel = document.createElement("label");
+        guidelineLabel.innerText = "Do's and Don't guideline for AI:";
+        guidelineLabel.style.fontWeight = "bold";
+        guidelineLabel.style.fontSize = "14px";
+        guidelineLabel.style.marginBottom = "6px";
+        guidelineLabel.style.marginTop = "12px";
+        guidelineLabel.style.display = "block";
 
         const guidelineTextarea = document.createElement("textarea");
         guidelineTextarea.id = `guideline-${tone}`;
@@ -159,7 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const wrapper = document.createElement("div");
         wrapper.style.marginBottom = "20px";
         wrapper.appendChild(label);
+        wrapper.appendChild(promptLabel);
         wrapper.appendChild(promptTextarea);
+        wrapper.appendChild(guidelineLabel);
         wrapper.appendChild(guidelineTextarea);
 
         // Create a container for the buttons and right-align them

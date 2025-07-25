@@ -522,7 +522,59 @@ class CSSManager {
         platformCSS = `
           /* X (Twitter) specific styles - scoped to our extension only */
           /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
-          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
+          
+          /* X Button Styling - Make it look proper and centered */
+          .vibe-btn {
+            background-color: #8B5CF6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 24px !important;
+            padding: 10px 20px !important;
+            margin: 8px 0 !important;
+            cursor: pointer !important;
+            font-size: 15px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            display: block !important;
+            width: fit-content !important;
+            text-align: center !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            box-sizing: border-box !important;
+            text-decoration: none !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            max-width: none !important;
+            position: relative !important;
+            z-index: 1 !important;
+            min-width: 180px !important;
+          }
+
+          .vibe-btn:hover {
+            background-color: #7C3AED !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+          }
+
+          .vibe-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 4px rgba(139, 92, 246, 0.3) !important;
+          }
+
+          /* Center the button in X's action bar */
+          [data-testid="tweet"] .vibe-btn {
+            margin: 8px auto !important;
+            display: block !important;
+            width: fit-content !important;
+          }
+
+          /* Ensure proper spacing in action button area */
+          [data-testid="tweet"] [role="group"] + .vibe-btn,
+          [data-testid="tweet"] [data-testid="reply"] + .vibe-btn {
+            margin-top: 8px !important;
+            margin-bottom: 8px !important;
+          }
           
           /* X responsive adjustments */
           @media (max-width: 768px) {
@@ -531,6 +583,12 @@ class CSSManager {
               right: 20px;
               width: calc(100vw - 40px);
               max-width: 400px;
+            }
+            
+            .vibe-btn {
+              font-size: 13px !important;
+              padding: 6px 12px !important;
+              max-width: 180px !important;
             }
           }
         `;

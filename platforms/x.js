@@ -76,19 +76,32 @@ class XPlatform extends BasePlatform {
   extractAuthorName(post) {
     this.log("🔍 Attempting to extract author name...");
 
+    // Enhanced selectors for current X interface
     const authorSelectors = [
       '[data-testid="User-Name"] a',
       '[data-testid="User-Name"] span',
-      ".css-901oao.css-bfa6kz.r-1re7ezh.r-6koalj.r-1qd0xha.r-a023e6.r-16dba41.r-1blvdjr.r-1ny4l3l.r-1loqt21",
+      '[data-testid="User-Name"] div',
       '[data-testid="User-Name"]',
       'a[role="link"][href*="/status"]',
+      'a[href*="/status"] span',
+      'a[href*="/status"] div',
+      ".css-901oao.css-bfa6kz.r-1re7ezh.r-6koalj.r-1qd0xha.r-a023e6.r-16dba41.r-1blvdjr.r-1ny4l3l.r-1loqt21",
       ".css-1dbjc4n.r-1wbh5a2.r-dnmrzs a",
+      // New selectors for current X interface
+      'div[data-testid="User-Name"] a',
+      'div[data-testid="User-Name"] span',
+      'div[data-testid="User-Name"] div',
+      'article a[role="link"]',
+      'article a[href*="/status"]',
     ];
 
     let nameElem = null;
+    let usedSelector = "";
+
     for (const selector of authorSelectors) {
       nameElem = post.querySelector(selector);
       if (nameElem) {
+        usedSelector = selector;
         this.log(`✅ Found author element with selector: ${selector}`);
         break;
       }
@@ -98,48 +111,132 @@ class XPlatform extends BasePlatform {
     if (nameElem) {
       fullName = nameElem.innerText.trim();
       this.log(`📝 Raw author name: "${fullName}"`);
+
+      // If the name is empty or too short, try to get it from parent elements
+      if (!fullName || fullName.length < 2) {
+        const parent = nameElem.parentElement;
+        if (parent) {
+          const parentText = parent.innerText.trim();
+          this.log(`🔄 Trying parent element text: "${parentText}"`);
+          if (parentText && parentText.length > 2) {
+            fullName = parentText;
+          }
+        }
+      }
     } else {
       this.log("❌ No author element found with any selector");
       fullName = this.findNameInTweetHeader(post);
     }
 
-    return this.processAuthorName(fullName);
+    // Additional debugging
+    this.log(`🔍 Final extracted name before processing: "${fullName}"`);
+
+    const processedName = this.processAuthorName(fullName);
+    this.log(`🎯 Final processed author name: "${processedName}"`);
+
+    return processedName;
   }
 
   findNameInTweetHeader(post) {
     this.log("🔄 Trying fallback author name extraction...");
-    const headerElements = post.querySelectorAll("a, span, div");
 
-    for (const element of headerElements) {
-      const text = element.textContent?.trim();
-      if (
-        text &&
-        text.length > 2 &&
-        text.length < 50 &&
-        /^[A-Z][a-z]+/.test(text)
-      ) {
-        const commonTexts = [
-          "Twitter",
-          "X",
-          "Home",
-          "Explore",
-          "Notifications",
-          "Messages",
-          "Bookmarks",
-          "Lists",
-          "Profile",
-          "More",
-        ];
-
-        if (!commonTexts.some((common) => text.includes(common))) {
-          const nameMatch = text.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/);
-          if (nameMatch) {
-            this.log(`✅ Found author name in fallback: "${nameMatch[1]}"`);
-            return nameMatch[1];
+    // Try multiple strategies for finding the author name
+    const strategies = [
+      // Strategy 1: Look for links that might contain the author name
+      () => {
+        const links = post.querySelectorAll('a[href*="/status"]');
+        for (const link of links) {
+          const text = link.textContent?.trim();
+          if (text && text.length > 2 && text.length < 50) {
+            // Look for patterns like "Dr Alex Young" or "Alex Young"
+            const nameMatch = text.match(
+              /^(Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+            );
+            if (nameMatch) {
+              this.log(`✅ Found author name in link: "${nameMatch[0]}"`);
+              return nameMatch[0];
+            }
           }
         }
+        return null;
+      },
+
+      // Strategy 2: Look for elements with role="link"
+      () => {
+        const linkElements = post.querySelectorAll('[role="link"]');
+        for (const element of linkElements) {
+          const text = element.textContent?.trim();
+          if (text && text.length > 2 && text.length < 50) {
+            const nameMatch = text.match(
+              /^(Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+            );
+            if (nameMatch) {
+              this.log(
+                `✅ Found author name in role="link": "${nameMatch[0]}"`
+              );
+              return nameMatch[0];
+            }
+          }
+        }
+        return null;
+      },
+
+      // Strategy 3: Look for any text that looks like a name
+      () => {
+        const allElements = post.querySelectorAll("a, span, div");
+        for (const element of allElements) {
+          const text = element.textContent?.trim();
+          if (
+            text &&
+            text.length > 2 &&
+            text.length < 50 &&
+            /^[A-Z][a-z]+/.test(text)
+          ) {
+            const commonTexts = [
+              "Twitter",
+              "X",
+              "Home",
+              "Explore",
+              "Notifications",
+              "Messages",
+              "Bookmarks",
+              "Lists",
+              "Profile",
+              "More",
+              "Reply",
+              "Retweet",
+              "Like",
+              "Share",
+              "Follow",
+              "Following",
+            ];
+
+            if (!commonTexts.some((common) => text.includes(common))) {
+              const nameMatch = text.match(
+                /^(Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+              );
+              if (nameMatch) {
+                this.log(
+                  `✅ Found author name in general search: "${nameMatch[0]}"`
+                );
+                return nameMatch[0];
+              }
+            }
+          }
+        }
+        return null;
+      },
+    ];
+
+    // Try each strategy
+    for (let i = 0; i < strategies.length; i++) {
+      const result = strategies[i]();
+      if (result) {
+        return result;
       }
     }
+
+    this.log("❌ No author name found with any fallback strategy");
     return "";
   }
 
@@ -152,11 +249,35 @@ class XPlatform extends BasePlatform {
     let firstNameWithPrefix = "the author";
     if (nameParts.length > 0) {
       if (knownPrefixes.includes(nameParts[0])) {
+        // For titles like "Dr.", include both title and first name
         firstNameWithPrefix = `${nameParts[0]} ${nameParts[1] || ""}`.trim();
+        this.log(`✅ Using title + first name: "${firstNameWithPrefix}"`);
       } else {
+        // For regular names, just use the first name
         firstNameWithPrefix = nameParts[0];
+        this.log(`✅ Using first name only: "${firstNameWithPrefix}"`);
       }
-      this.log(`✅ Final firstNameWithPrefix: "${firstNameWithPrefix}"`);
+
+      // Additional validation - make sure we have a reasonable name
+      if (
+        firstNameWithPrefix.length < 2 ||
+        firstNameWithPrefix === "the author"
+      ) {
+        this.log(
+          `⚠️ Name seems invalid, trying to extract from full name: "${fullName}"`
+        );
+
+        // Try to extract a proper name from the full text
+        const nameMatch = fullName.match(
+          /^(Dr\.?\s*)?([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/
+        );
+        if (nameMatch) {
+          firstNameWithPrefix = nameMatch[0].trim();
+          this.log(`✅ Extracted valid name: "${firstNameWithPrefix}"`);
+        }
+      }
+
+      this.log(`🎯 Final firstNameWithPrefix: "${firstNameWithPrefix}"`);
     } else {
       this.log('❌ No name parts found, using fallback: "the author"');
     }
@@ -282,33 +403,38 @@ class XPlatform extends BasePlatform {
   }
 
   injectButton(post, buttonElement) {
+    // Check if button already exists to prevent duplicates
+    if (post.querySelector(".vibe-btn")) {
+      this.log("⏭️ Button already exists, skipping injection");
+      return false;
+    }
+
     const actionButton = this.findActionButton(post);
     if (actionButton && actionButton.parentElement) {
-      // Create a container div for proper centering
-      const container = document.createElement("div");
-      container.style.cssText = `
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        margin: 8px 0;
-        padding: 0;
-      `;
-
-      // Add the button to the container
-      container.appendChild(buttonElement);
-
-      // Insert the container after the action buttons group
+      // Find the action buttons container (usually has role="group")
       const actionGroup =
         actionButton.closest('[role="group"]') || actionButton.parentElement;
+
+      // Insert the button directly before the action buttons group
       if (actionGroup && actionGroup.parentElement) {
-        actionGroup.parentElement.insertBefore(
-          container,
-          actionGroup.nextSibling
-        );
+        // Add better styling to avoid overlapping with comment count
+        buttonElement.style.cssText = `
+          display: block;
+          margin: 12px 0 8px 0;
+          width: fit-content;
+          clear: both;
+          position: relative;
+          z-index: 10;
+          float: left;
+        `;
+
+        actionGroup.parentElement.insertBefore(buttonElement, actionGroup);
+        this.log("✅ Button injected successfully above action row");
         return true;
       }
     }
+
+    this.log("❌ No action button found for injection");
     return false;
   }
 

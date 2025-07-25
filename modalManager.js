@@ -63,7 +63,7 @@ class ModalManager {
             <option value="Contribution">📚 Contribution</option>
             <option value="Disagreement - Contrary">⚡ Disagreement - Contrary</option>
             <option value="Criticism">🧐 Criticism</option>
-            <option value="Funny Sarcastic">😏 Funny Sarcastic</option>
+            <option value="Funny Sarcastic">🤪 Funny Sarcastic</option>
             <option value="Perspective (Why / What / How)">🔍 Perspective (Why / What / How)</option>
             <option value="Professional Industry Specific">🏢 Professional Industry Specific</option>
           </select>
@@ -94,13 +94,20 @@ class ModalManager {
     // Set tone heading
     const toneHeading = this.modal.querySelector("#tone-heading");
     if (toneHeading) {
-      toneHeading.textContent = toneLabel || "💬 Friendly";
+      toneHeading.textContent = toneLabel || "✅ Agreement with Value";
     }
 
     // Set current tone in dropdown
     const toneSelect = this.modal.querySelector("#modalTone");
     if (toneSelect) {
-      const currentTone = toneLabel?.replace(/^.*?\s/, "") || "Friendly";
+      // Extract tone name from toneLabel (remove emoji and extra spaces)
+      let currentTone = "Agreement with Value"; // Default
+      if (toneLabel) {
+        // Remove emoji and clean up the tone name
+        currentTone = toneLabel.replace(/^[^\s]*\s*/, "").trim();
+        // Handle special cases where tone names might be different
+        if (currentTone === "Friendly") currentTone = "Agreement with Value";
+      }
       toneSelect.value = currentTone;
     }
 

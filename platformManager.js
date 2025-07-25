@@ -135,24 +135,21 @@ class PlatformManager {
 
   // Platform-specific button creation
   createActionButton(platformName) {
-    const platform = this.platforms.get(platformName);
+    const platform = this.getCurrentPlatform();
     if (!platform) {
       return null;
     }
 
-    const btn = document.createElement("button");
-    btn.innerText = `${platform.getPlatformIcon()} AI Suggestions`;
-    btn.className = "vibe-btn";
-
-    return btn;
+    // Delegate to the current platform's createActionButton method
+    return platform.createActionButton(platformName);
   }
 
   // Platform-specific modal customization
   getModalTitle() {
     const platform = this.getCurrentPlatform();
-    if (!platform) return "AI Suggestions";
+    if (!platform) return "Suggest Comments";
 
-    return `${platform.getPlatformIcon()} ${platform.getPlatformName()} AI Suggestions`;
+    return `${platform.getPlatformIcon()} ${platform.getPlatformName()} Suggest Comments`;
   }
 
   // Platform-specific content type labels

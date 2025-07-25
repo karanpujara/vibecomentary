@@ -143,6 +143,7 @@ function processPosts(posts, platform) {
     }
 
     console.log(`✅ Post ${index}: Created button:`, btn);
+    console.log(`🎯 Button text: "${btn.innerText}"`);
 
     btn.addEventListener("click", async (e) => {
       console.log(`🎯 Button clicked for post ${index}`);
@@ -261,7 +262,7 @@ async function handleButtonClick(post, platform = null) {
 
       const result = await new Promise((resolve, reject) => {
         chrome.storage.local.get(
-          ["vibeOpenAIKey", "vibeTone", "vibeEmoji"],
+          ["vibeOpenAIKey", "vibeTone", "vibeEmoji", "lastSelectedTone"],
           (result) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
@@ -273,7 +274,15 @@ async function handleButtonClick(post, platform = null) {
       });
 
       const apiKey = result.vibeOpenAIKey;
-      const tone = result.vibeTone || "Friendly";
+      // Use last selected tone, fallback to stored tone, then default to "Agreement with Value"
+      const tone =
+        result.lastSelectedTone || result.vibeTone || "Agreement with Value";
+
+      console.log("🎯 Tone selection:", {
+        lastSelectedTone: result.lastSelectedTone,
+        vibeTone: result.vibeTone,
+        finalTone: tone,
+      });
 
       // Complete emoji map to ensure we always have an emoji
       const emojiMap = {
@@ -287,7 +296,7 @@ async function handleButtonClick(post, platform = null) {
         Contribution: "📚",
         "Disagreement - Contrary": "⚡",
         Criticism: "🧐",
-        "Funny Sarcastic": "😏",
+        "Funny Sarcastic": "🤪",
         "Perspective (Why / What / How)": "🔍",
         "Professional Industry Specific": "🏢",
       };
@@ -372,6 +381,21 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
 // Handle tone change
 async function handleToneChange(newTone) {
   try {
+    console.log("🎯 Tone changed to:", newTone);
+
+    // Save the last selected tone for future use
+    await new Promise((resolve, reject) => {
+      chrome.storage.local.set({ lastSelectedTone: newTone }, () => {
+        if (chrome.runtime.lastError) {
+          reject(new Error(chrome.runtime.lastError.message));
+        } else {
+          resolve();
+        }
+      });
+    });
+
+    console.log("✅ Last selected tone saved:", newTone);
+
     const result = await new Promise((resolve, reject) => {
       chrome.storage.local.get(["vibeOpenAIKey", "vibeEmoji"], (result) => {
         if (chrome.runtime.lastError) {
@@ -394,7 +418,7 @@ async function handleToneChange(newTone) {
       Contribution: "📚",
       "Disagreement - Contrary": "⚡",
       Criticism: "🧐",
-      "Funny Sarcastic": "😏",
+      "Funny Sarcastic": "🤪",
       "Perspective (Why / What / How)": "🔍",
       "Professional Industry Specific": "🏢",
     };
