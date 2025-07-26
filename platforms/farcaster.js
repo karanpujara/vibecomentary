@@ -723,7 +723,7 @@ class FarcasterPlatform extends BasePlatform {
 
   createActionButton(platformName) {
     const btn = document.createElement("button");
-    btn.innerText = "💬 Suggest Comments";
+    btn.innerText = "📝✨";
     btn.className = "vibe-btn farcaster-btn";
     btn.id = "vibe-test-button-" + Date.now();
     btn.setAttribute("data-vibe-debug", "true");

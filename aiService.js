@@ -64,12 +64,13 @@ class AIService {
       // Handle null userProfileName gracefully
       const safeUserProfileName = userProfileName || "Your Name";
 
-      // Get custom prompts and guidelines from storage, fallback to platform-specific or default
+      // Get custom prompts, guidelines, and tones from storage, fallback to platform-specific or default
       const customPrompts = await this.getCustomPrompts();
       const customGuidelines = await this.getCustomGuidelines();
+      const customTones = await this.getCustomTones();
 
       // Use custom prompts if available, otherwise use platform-specific or default
-      const prompts =
+      let prompts =
         customPrompts ||
         (platform ? platform.getDefaultPrompts() : this.getDefaultPrompts());
 
@@ -78,9 +79,18 @@ class AIService {
         ? platform.getDefaultGuidelines()
         : this.getDefaultGuidelines();
 
-      const guidelines = customGuidelines
+      let guidelines = customGuidelines
         ? { ...defaultGuidelines, ...customGuidelines } // Merge defaults with custom
         : defaultGuidelines;
+
+      // Add custom tones to prompts and guidelines
+      if (customTones) {
+        Object.keys(customTones).forEach((toneName) => {
+          const customTone = customTones[toneName];
+          prompts[toneName] = customTone.prompt;
+          guidelines[toneName] = customTone.guideline;
+        });
+      }
 
       const prompt = prompts[tone] || this.getDefaultPrompts()[tone];
       const guidelineRaw =
@@ -108,7 +118,20 @@ class AIService {
       console.log("👤 Processed firstNameWithPrefix:", firstNameWithPrefix);
       console.log("📋 Guideline with replacement:", guideline);
 
-      const finalPrompt = `${prompt}
+      // Ensure the prompt requests 2 comments if it doesn't already
+      let enhancedPrompt = prompt;
+      if (
+        !prompt.toLowerCase().includes("write 2") &&
+        !prompt.toLowerCase().includes("2 comments")
+      ) {
+        enhancedPrompt = `Write 2 ${prompt}`;
+        console.log(
+          "🔧 Enhanced custom prompt to request 2 comments:",
+          enhancedPrompt
+        );
+      }
+
+      const finalPrompt = `${enhancedPrompt}
 
 Guidelines:
 ${guideline}
@@ -117,6 +140,7 @@ IMPORTANT:
 - When addressing the author, use "${firstNameWithPrefix}" (the author's name) and NOT any names mentioned in the post content.
 - Do NOT mention comment generation, AI tools, or the fact that you're generating comments.
 - Focus on the post content and respond naturally as if you're a real person commenting.
+- Generate exactly 2 comments.
 
 Please format your response with each comment on a separate line, separated by a blank line.
 
@@ -220,6 +244,39 @@ Post they shared:
               ""
             ) // Remove introductory text
             .trim();
+
+          // Extract only the first DM message if multiple are generated
+          const lines = processedDm.split("\n");
+          let firstDmLines = [];
+          let foundFirstDm = false;
+
+          for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            // Look for the start of a DM (Hello + name pattern)
+            if (line.match(/^Hello\s+\w+,\s*/i) && !foundFirstDm) {
+              foundFirstDm = true;
+              firstDmLines.push(line);
+            } else if (foundFirstDm) {
+              // Continue collecting lines until we hit another "Hello" or empty line
+              if (line.match(/^Hello\s+\w+,\s*/i)) {
+                break; // Stop at the next DM
+              }
+              if (
+                line === "" &&
+                i < lines.length - 1 &&
+                lines[i + 1].match(/^Hello\s+\w+,\s*/i)
+              ) {
+                break; // Stop before next DM
+              }
+              firstDmLines.push(line);
+            }
+          }
+
+          // If we found a DM, use it; otherwise use the original cleaned content
+          if (foundFirstDm && firstDmLines.length > 0) {
+            processedDm = firstDmLines.join("\n").trim();
+          }
 
           // Clean up any remaining variables in DM content
           processedDm = processedDm.replace(
@@ -678,6 +735,19 @@ Post they shared:
       return data.toneGuidelines || null;
     } catch (error) {
       console.error("Error getting custom guidelines:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Get custom tones from storage
+   */
+  async getCustomTones() {
+    try {
+      const data = await this.getStorageData(["customTones"]);
+      return data.customTones || null;
+    } catch (error) {
+      console.error("Error getting custom tones:", error);
       return null;
     }
   }

@@ -440,7 +440,7 @@ class XPlatform extends BasePlatform {
 
   createActionButton(platformName) {
     const btn = document.createElement("button");
-    btn.innerText = "💬 Comment Suggestions";
+    btn.innerText = "📝✨";
     btn.className = "vibe-btn";
     return btn;
   }

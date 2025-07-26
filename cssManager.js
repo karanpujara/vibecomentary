@@ -79,6 +79,11 @@ class CSSManager {
         overflow-y: auto;
       }
 
+      /* Modal Content - needs relative positioning for absolute close button */
+      #vibe-modal .vibe-modal-content {
+        position: relative;
+      }
+
       /* Modal Header */
       .vibe-modal-content .vibe-header {
         display: flex;
@@ -108,6 +113,10 @@ class CSSManager {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        z-index: 1000 !important;
       }
 
       #vibe-close:hover {
@@ -504,35 +513,20 @@ class CSSManager {
         platformCSS = `
           /* LinkedIn-specific styles - scoped to our extension only */
           /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
-          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
           
-          /* LinkedIn responsive adjustments */
-          @media (max-width: 768px) {
-            #vibe-modal {
-              bottom: 20px;
-              right: 20px;
-              width: calc(100vw - 40px);
-              max-width: 400px;
-            }
-          }
-        `;
-        break;
-
-      case "X (Twitter)":
-        platformCSS = `
-          /* X (Twitter) specific styles - scoped to our extension only */
-          /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
-          
-          /* X Button Styling - Make it look proper and centered */
-          .vibe-btn {
+          /* LinkedIn Button Styling - Center above comment button */
+          /* Only apply to LinkedIn pages to avoid conflicts with X */
+          .feed-shared-update-v2 .vibe-btn,
+          [data-test-id="post-content"] .vibe-btn,
+          .artdeco-card .vibe-btn {
             background-color: #8B5CF6 !important;
             color: white !important;
-            border: none !important;
-            border-radius: 24px !important;
-            padding: 10px 20px !important;
-            margin: 8px 0 !important;
+            border: 2px solid #8B5CF6 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            margin: 6px auto !important;
             cursor: pointer !important;
-            font-size: 15px !important;
+            font-size: 13px !important;
             font-weight: 600 !important;
             transition: all 0.2s ease !important;
             display: block !important;
@@ -548,7 +542,93 @@ class CSSManager {
             max-width: none !important;
             position: relative !important;
             z-index: 1 !important;
-            min-width: 180px !important;
+            min-width: 80px !important;
+          }
+
+          .feed-shared-update-v2 .vibe-btn:hover,
+          [data-test-id="post-content"] .vibe-btn:hover,
+          .artdeco-card .vibe-btn:hover {
+            background-color: #7C3AED !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+          }
+
+          .feed-shared-update-v2 .vibe-btn:active,
+          [data-test-id="post-content"] .vibe-btn:active,
+          .artdeco-card .vibe-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 4px rgba(139, 92, 246, 0.3) !important;
+          }
+
+          /* Center the button in LinkedIn's action bar */
+          .feed-shared-update-v2 .social-actions__comment-button + .vibe-btn,
+          .feed-shared-update-v2 button[aria-label*="Comment"] + .vibe-btn,
+          [data-test-id="post-content"] .social-actions__comment-button + .vibe-btn,
+          [data-test-id="post-content"] button[aria-label*="Comment"] + .vibe-btn {
+            margin: 8px auto !important;
+            display: block !important;
+            width: fit-content !important;
+          }
+
+          /* Ensure proper spacing when button is before comment button */
+          .feed-shared-update-v2 .vibe-btn + .social-actions__comment-button,
+          .feed-shared-update-v2 .vibe-btn + button[aria-label*="Comment"],
+          [data-test-id="post-content"] .vibe-btn + .social-actions__comment-button,
+          [data-test-id="post-content"] .vibe-btn + button[aria-label*="Comment"] {
+            margin-top: 4px !important;
+          }
+          
+          /* LinkedIn responsive adjustments */
+          @media (max-width: 768px) {
+            #vibe-modal {
+              bottom: 20px;
+              right: 20px;
+              width: calc(100vw - 40px);
+              max-width: 400px;
+            }
+            
+            .feed-shared-update-v2 .vibe-btn,
+            [data-test-id="post-content"] .vibe-btn,
+            .artdeco-card .vibe-btn {
+              font-size: 11px !important;
+              padding: 4px 8px !important;
+              min-width: 70px !important;
+            }
+          }
+        `;
+        break;
+
+      case "X (Twitter)":
+        platformCSS = `
+          /* X (Twitter) specific styles - scoped to our extension only */
+          /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
+          
+          /* X Button Styling - Make it look proper and centered */
+          .vibe-btn {
+            background-color: #8B5CF6 !important;
+            color: white !important;
+            border: none !important;
+            border-radius: 20px !important;
+            padding: 6px 12px !important;
+            margin: 6px 0 !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            display: block !important;
+            width: fit-content !important;
+            text-align: center !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            box-sizing: border-box !important;
+            text-decoration: none !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            max-width: none !important;
+            position: relative !important;
+            z-index: 1 !important;
+            min-width: 80px !important;
           }
 
           .vibe-btn:hover {
@@ -586,9 +666,9 @@ class CSSManager {
             }
             
             .vibe-btn {
-              font-size: 13px !important;
-              padding: 6px 12px !important;
-              max-width: 180px !important;
+              font-size: 11px !important;
+              padding: 4px 8px !important;
+              max-width: 80px !important;
             }
           }
         `;
@@ -598,7 +678,45 @@ class CSSManager {
         platformCSS = `
           /* Farcaster-specific styles - scoped to our extension only */
           /* ✅ ALL MODAL STYLING NOW HANDLED BY UNIFIED CSS */
-          /* ✅ NO PLATFORM-SPECIFIC OVERRIDES */
+          
+          /* Farcaster Button Styling - Square design to match X */
+          .vibe-btn.farcaster-btn {
+            background-color: #8B5CF6 !important;
+            color: white !important;
+            border: 2px solid #8B5CF6 !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+            margin: 6px 0 !important;
+            cursor: pointer !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            display: inline-block !important;
+            width: fit-content !important;
+            text-align: center !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            box-sizing: border-box !important;
+            text-decoration: none !important;
+            line-height: 1.3 !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            max-width: none !important;
+            position: relative !important;
+            z-index: 1 !important;
+            min-width: 80px !important;
+          }
+
+          .vibe-btn.farcaster-btn:hover {
+            background-color: #7C3AED !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3) !important;
+          }
+
+          .vibe-btn.farcaster-btn:active {
+            transform: translateY(0) !important;
+            box-shadow: 0 1px 4px rgba(139, 92, 246, 0.3) !important;
+          }
           
           /* Farcaster responsive adjustments */
           @media (max-width: 768px) {
@@ -607,6 +725,12 @@ class CSSManager {
               right: 20px;
               width: calc(100vw - 40px);
               max-width: 400px;
+            }
+            
+            .vibe-btn.farcaster-btn {
+              font-size: 11px !important;
+              padding: 4px 8px !important;
+              min-width: 70px !important;
             }
           }
         `;
@@ -690,7 +814,7 @@ class CSSManager {
         transform: translate(-50%, -50%);
         z-index: 999999;
         background: white;
-        border: 2px solid #0073b1;
+        border: 2px solid rgb(139, 92, 246);
         border-radius: 8px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         padding: 16px;
@@ -714,7 +838,7 @@ class CSSManager {
       }
 
       .copy-btn {
-        background: #0073b1;
+        background: rgb(139, 92, 246);
         color: white;
         border: none;
         padding: 6px 12px;
@@ -738,7 +862,7 @@ class CSSManager {
       }
 
       #vibe-modal #improveCommentBtn {
-        background-color: #0073b1 !important;
+        background-color: rgb(139, 92, 246) !important;
         color: white !important;
         border: none !important;
         padding: 6px 12px !important;
@@ -749,7 +873,7 @@ class CSSManager {
       }
 
       #vibe-modal #improveCommentBtn:hover {
-        background-color: #005a8b !important;
+        background-color: rgb(124, 82, 221) !important;
       }
 
       #vibe-modal select {
@@ -769,7 +893,7 @@ class CSSManager {
       }
 
       #vibe-modal #copyImprovedBtn {
-        background: #0073b1 !important;
+        background: rgb(139, 92, 246) !important;
         color: white !important;
         border: none !important;
         padding: 6px 12px !important;
@@ -779,7 +903,7 @@ class CSSManager {
       }
 
       #vibe-modal #copy-dm {
-        background: #0073b1 !important;
+        background: rgb(139, 92, 246) !important;
         color: white !important;
         border: none !important;
         padding: 6px 12px !important;

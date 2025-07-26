@@ -1,4 +1,4 @@
-# VibeCommentary - AI-Powered Social Media Comment Generator
+# Be Visible - AI-Powered Social Media Comment Generator
 
 A Chrome extension that uses AI to generate engaging comments and DM suggestions for social media platforms like LinkedIn, X (Twitter), and more.
 
@@ -6,16 +6,17 @@ A Chrome extension that uses AI to generate engaging comments and DM suggestions
 
 - **AI-Powered Comments**: Generate contextual comments using OpenAI's GPT models
 - **Multiple Tones**: Choose from 13 different comment tones (Friendly, Professional, Contrarian, etc.)
+- **Custom Tones**: Create your own custom tones with custom names, emojis, prompts, and guidelines
 - **DM Suggestions**: Get personalized direct message suggestions
 - **Comment Improvement**: Improve your own comments with AI assistance
 - **Multi-Platform Support**: Works on LinkedIn, X (Twitter), Farcaster, and extensible for other platforms
 - **Customizable Prompts**: Advanced settings to customize AI behavior for each tone
-- **Export/Import Settings**: Backup and restore your custom configurations
+- **Export/Import Settings**: Backup and restore your custom configurations including custom tones
 
 ## 📁 File Structure
 
 ```
-vibecommentary/
+be-visible/
 ├── 📄 manifest.json              # Extension manifest and permissions
 ├── 📄 contentScript.js           # Main orchestrator script
 ├── 📄 aiService.js               # AI operations and API handling
@@ -215,7 +216,7 @@ The extension uses a platform-agnostic architecture:
 
    ```bash
    git clone <repository-url>
-   cd vibecommentary
+   cd be-visible
    ```
 
 2. **Load in Chrome**
@@ -233,7 +234,7 @@ The extension uses a platform-agnostic architecture:
 
 4. **Start Using**
    - Navigate to LinkedIn, X, or Farcaster
-   - Look for "💬 Suggest Comments" buttons under posts
+   - Look for "📝✨" buttons under posts
    - Click to generate AI-powered comments and DMs
 
 ## 🎨 Customization
@@ -253,6 +254,26 @@ The extension uses a platform-agnostic architecture:
 3. Export settings for backup
 4. Import settings on other installations
 
+### Creating Custom Tones
+
+1. Go to Settings in the extension
+2. Scroll down to "✨ Create Custom Tones" section
+3. Fill in the form:
+   - **Tone Name**: Choose a unique name for your tone
+   - **Emoji**: Pick an emoji to represent your tone
+   - **Prompt Text**: Write instructions for the AI
+   - **Guideline Text**: Define specific guidelines for the tone
+4. Click "✨ Create Tone" to save
+5. Your custom tone will appear in the dropdown when generating comments
+6. Custom tones are included in export/import functionality
+
+**Example Custom Tone:**
+
+- **Name**: "Professional Networking"
+- **Emoji**: "🤝"
+- **Prompt**: "Write 2 professional networking comments that help build connections and offer value to the author's network."
+- **Guideline**: "- Start with the author's name\n- Offer specific insights or resources\n- Keep tone professional and helpful\n- Focus on relationship building"
+
 ## 🔒 Privacy & Security
 
 - **Local Storage**: All data is stored locally in your browser
@@ -261,6 +282,55 @@ The extension uses a platform-agnostic architecture:
 - **No Tracking**: No analytics or tracking code
 
 ## 📋 Recent Changes
+
+### Version 1.1 - Major UI/UX Improvements & Branding Update
+
+#### 🎨 **Branding & Visual Updates**
+
+- **Extension Rename**: Changed from "VibeCommentary" to "Be Visible"
+- **Icon Update**: New purple icon with magic emoji (✨) instead of blue dot
+- **Button Text**: Changed from "💬 Suggest Comments" to "📝✨" across all platforms
+- **Modal Header**: Added "🎯 Be Visible" heading with subtitle in suggestion modal
+- **Color Scheme**: Unified purple theme (`rgb(139, 92, 246)`) across all UI elements
+
+#### 🔧 **Button Design & Positioning**
+
+- **LinkedIn**: Button positioned above comment button, centered
+- **X (Twitter)**: Maintained existing positioning with updated design
+- **Farcaster**: Maintained existing positioning with updated design
+- **Button Size**: Reduced padding and made buttons more compact
+- **Border Style**: Added consistent purple border (`2px solid #8B5CF6`) across all platforms
+- **Shape**: Changed to square/rectangular design (`border-radius: 8px`) for modern look
+
+#### 🎯 **Custom Tones Feature**
+
+- **Custom Tone Creation**: Users can create their own tones with custom names, emojis, prompts, and guidelines
+- **Emoji Picker**: Modern, searchable emoji picker with categories and recent emojis
+- **Tabbed Settings**: Reorganized settings into "General", "Tones", and "Add Tone" tabs
+- **Export/Import**: Custom tones are included in settings backup/restore
+- **Grid Layout**: Custom tones displayed in organized 3-column grid
+
+#### 🧠 **AI Improvements**
+
+- **Custom Tone Integration**: AI now uses custom tones in addition to default tones
+- **Two Comment Generation**: Ensured all tones (including custom) generate exactly 2 comments
+- **Prompt Enhancement**: Automatic enhancement of custom prompts to request 2 comments
+- **Variable Cleaning**: Improved cleaning of literal variable placeholders in AI responses
+
+#### 🎨 **Settings UI Overhaul**
+
+- **Tabbed Interface**: Clean separation of API key, tone management, and custom tone creation
+- **Bulk Actions**: "Save All Tones" and "Reset All to Default" buttons
+- **Individual Controls**: Save/Reset buttons for each individual tone
+- **Improved Export/Import**: Better file handling and UI for settings backup
+- **Responsive Design**: Mobile-friendly settings interface
+
+#### 🔧 **Technical Improvements**
+
+- **CSS Scoping**: Platform-specific CSS to prevent conflicts between platforms
+- **Event Delegation**: Improved emoji picker and tone card interactions
+- **Error Handling**: Better error handling for custom tone operations
+- **Performance**: Optimized button injection and modal rendering
 
 ### Version 1.0 - Farcaster Support Added
 

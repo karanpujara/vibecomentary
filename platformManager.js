@@ -147,9 +147,9 @@ class PlatformManager {
   // Platform-specific modal customization
   getModalTitle() {
     const platform = this.getCurrentPlatform();
-    if (!platform) return "Suggest Comments";
+    if (!platform) return "📝✨";
 
-    return `${platform.getPlatformIcon()} ${platform.getPlatformName()} Suggest Comments`;
+    return `${platform.getPlatformIcon()} 📝✨`;
   }
 
   // Platform-specific content type labels

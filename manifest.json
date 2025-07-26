@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "VibeCommentary",
+  "name": "Be Visible",
   "version": "1.0",
   "description": "Suggest engaging comments and DMs with AI for LinkedIn, X (Twitter), and more.",
   "permissions": ["scripting", "activeTab", "storage"],

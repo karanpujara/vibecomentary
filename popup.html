@@ -2,12 +2,30 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>VibeCommentary</title>
+    <title>Be Visible</title>
     <style>
       body {
         font-family: sans-serif;
         padding: 16px;
         width: 300px;
+        min-height: 400px;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgb(139, 92, 246);
+      }
+      .header h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: bold;
+        color: rgb(139, 92, 246);
+      }
+      .header p {
+        margin: 5px 0 0 0;
+        font-size: 12px;
+        color: #666;
       }
       .status {
         display: flex;
@@ -21,16 +39,17 @@
         margin-top: 4px;
       }
       button {
-        margin-top: 10px;
+        margin-top: 15px;
         width: 100%;
-        padding: 8px;
+        padding: 10px;
         border: none;
         border-radius: 6px;
         cursor: pointer;
         font-weight: bold;
+        font-size: 14px;
       }
       #openSettings {
-        background-color: #2d8cff;
+        background-color: rgb(139, 92, 246);
         color: white;
       }
       #openGuide {
@@ -40,6 +59,11 @@
     </style>
   </head>
   <body>
+    <div class="header">
+      <h1>🎯 Be Visible</h1>
+      <p>AI-Powered Social Media Engagement</p>
+    </div>
+
     <div class="status">
       <div>🧠 OpenAI:</div>
       <div id="apiStatus">Checking...</div>
@@ -52,7 +76,16 @@
       <option value="gpt-4o">GPT-4o</option>
     </select>
 
-    <div style="margin-top: 14px; font-size: 14px">
+    <div
+      style="
+        margin-top: 20px;
+        font-size: 14px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 3px solid rgb(139, 92, 246);
+      "
+    >
       ✅ Available for: <strong>LinkedIn, X, Farcaster</strong><br />
       🕐 More platforms coming soon
     </div>

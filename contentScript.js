@@ -226,7 +226,7 @@ function injectButtonWithLegacyLogic() {
     console.log("✅ Found comment button");
 
     const btn = document.createElement("button");
-    btn.innerText = "💬 Suggest Comments";
+    btn.innerText = "📝✨";
     btn.className = "vibe-btn";
 
     btn.addEventListener("click", async () => {
@@ -346,7 +346,7 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
       .getCurrentPlatform()
       ?.getPlatformName();
 
-    modalManager.show(toneLabel, [], "", true, platformName);
+    await modalManager.show(toneLabel, [], "", true, platformName);
 
     // Fetch suggestions from AI service
     const result = await aiService.fetchSuggestions(
@@ -359,7 +359,7 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
 
     if (result.success) {
       // Show results in modal
-      modalManager.show(
+      await modalManager.show(
         toneLabel,
         result.comments,
         result.dmSuggestion,
@@ -397,13 +397,16 @@ async function handleToneChange(newTone) {
     console.log("✅ Last selected tone saved:", newTone);
 
     const result = await new Promise((resolve, reject) => {
-      chrome.storage.local.get(["vibeOpenAIKey", "vibeEmoji"], (result) => {
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
-        } else {
-          resolve(result);
+      chrome.storage.local.get(
+        ["vibeOpenAIKey", "vibeEmoji", "customTones"],
+        (result) => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve(result);
+          }
         }
-      });
+      );
     });
 
     const apiKey = result.vibeOpenAIKey;
@@ -422,6 +425,12 @@ async function handleToneChange(newTone) {
       "Perspective (Why / What / How)": "🔍",
       "Professional Industry Specific": "🏢",
     };
+
+    // Add custom tones to emoji map
+    const customTones = result.customTones || {};
+    Object.keys(customTones).forEach((toneName) => {
+      emojiMap[toneName] = customTones[toneName].emoji;
+    });
 
     const emoji = result.vibeEmoji || emojiMap[newTone] || "💬";
 
@@ -532,7 +541,7 @@ setTimeout(() => {
       /* Extension-specific button styling only - very specific */
       button.vibe-btn,
       .vibe-btn {
-        background-color: #0073b1 !important;
+        background-color: rgb(139, 92, 246) !important;
         color: white !important;
         border: none !important;
         border-radius: 4px !important;
@@ -550,7 +559,7 @@ setTimeout(() => {
       }
       button.vibe-btn:hover,
       .vibe-btn:hover {
-        background-color: #005a8b !important;
+        background-color: rgb(124, 82, 221) !important;
       }
       
       /* Modal-specific styling only */
@@ -560,7 +569,7 @@ setTimeout(() => {
         right: 30px;
         z-index: 999999;
         background: white;
-        border: 2px solid #0073b1;
+        border: 2px solid rgb(139, 92, 246);
         border-radius: 8px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         padding: 16px;

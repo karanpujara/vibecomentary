@@ -487,7 +487,8 @@ class LinkedInPlatform extends BasePlatform {
   injectButton(post, buttonElement) {
     const commentButton = this.findActionButton(post);
     if (commentButton && commentButton.parentElement) {
-      commentButton.parentElement.appendChild(buttonElement);
+      // Insert the button before the comment button instead of after
+      commentButton.parentElement.insertBefore(buttonElement, commentButton);
       return true;
     }
     return false;
@@ -495,7 +496,7 @@ class LinkedInPlatform extends BasePlatform {
 
   createActionButton(platformName) {
     const btn = document.createElement("button");
-    btn.innerText = "💬 Suggest Comments";
+    btn.innerText = "📝✨";
     btn.className = "vibe-btn";
     return btn;
   }

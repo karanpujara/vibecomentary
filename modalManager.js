@@ -18,16 +18,37 @@ class ModalManager {
     `;
   }
 
-  createModal() {
+  async createModal() {
     const modal = document.createElement("div");
     modal.id = "vibe-modal";
 
+    // Get custom tones from storage
+    let customTonesHTML = "";
+    try {
+      const customTones = await this.getCustomTones();
+      if (customTones) {
+        Object.keys(customTones).forEach((toneName) => {
+          const tone = customTones[toneName];
+          customTonesHTML += `<option value="${toneName}">${tone.emoji} ${toneName}</option>`;
+        });
+      }
+    } catch (error) {
+      console.error("Error loading custom tones:", error);
+    }
+
     modal.innerHTML = `
       <div class="vibe-modal-content">
+        <!-- Close button positioned at top right -->
+        <button id="vibe-close" style="position: absolute; top: 8px; right: 8px; z-index: 1000;">✖</button>
+
+        <!-- Be Visible Heading -->
+        <div style="text-align: center; margin-bottom: 15px; padding: 10px 0; border-bottom: 2px solid rgb(139, 92, 246);">
+          <h2 style="margin: 0; color: rgb(139, 92, 246); font-size: 20px; font-weight: 600;">🎯 Be Visible</h2>
+          <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">AI-Powered Social Media Engagement</p>
+        </div>
 
         <div class="vibe-header">
           <span id="tone-heading"></span>
-          <button id="vibe-close">✖</button>
         </div>
 
         <!-- ✍️ Improve Your Own Comment -->
@@ -66,6 +87,7 @@ class ModalManager {
             <option value="Funny Sarcastic">🤪 Funny Sarcastic</option>
             <option value="Perspective (Why / What / How)">🔍 Perspective (Why / What / How)</option>
             <option value="Professional Industry Specific">🏢 Professional Industry Specific</option>
+            ${customTonesHTML}
           </select>
         </div>
 
@@ -88,7 +110,7 @@ class ModalManager {
     this.hide();
 
     // Create new modal
-    this.modal = this.createModal();
+    this.modal = await this.createModal();
     document.body.appendChild(this.modal);
 
     // Set tone heading
@@ -149,6 +171,30 @@ class ModalManager {
       this.modal.remove();
       this.modal = null;
     }
+  }
+
+  /**
+   * Get custom tones from storage
+   */
+  async getCustomTones() {
+    return new Promise((resolve, reject) => {
+      if (typeof chrome === "undefined" || !chrome.storage) {
+        resolve(null);
+        return;
+      }
+
+      chrome.storage.local.get(["customTones"], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "Error getting custom tones:",
+            chrome.runtime.lastError
+          );
+          resolve(null);
+        } else {
+          resolve(result.customTones || null);
+        }
+      });
+    });
   }
 
   setupEventListeners() {
