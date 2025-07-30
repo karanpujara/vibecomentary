@@ -22,6 +22,10 @@ document.addEventListener("DOMContentLoaded", () => {
     chrome.storage.local.set({ vibeModel: e.target.value });
   });
 
+  document.getElementById("openCreate").addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("create.html") });
+  });
+
   document.getElementById("openSettings").addEventListener("click", () => {
     chrome.runtime.openOptionsPage();
   });

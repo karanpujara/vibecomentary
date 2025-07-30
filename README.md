@@ -1,17 +1,20 @@
-# Be Visible - AI-Powered Social Media Comment Generator
+# Be Visible - AI-Powered Social Media Content Generator
 
-A Chrome extension that uses AI to generate engaging comments and DM suggestions for social media platforms like LinkedIn, X (Twitter), and more.
+A Chrome extension that uses AI to generate engaging comments, DM suggestions, and create posts for social media platforms like LinkedIn, X (Twitter), and Farcaster.
 
 ## 🚀 Features
 
 - **AI-Powered Comments**: Generate contextual comments using OpenAI's GPT models
-- **Multiple Tones**: Choose from 13 different comment tones (Friendly, Professional, Contrarian, etc.)
-- **Custom Tones**: Create your own custom tones with custom names, emojis, prompts, and guidelines
+- **AI-Powered Post Creation**: Create engaging posts with custom tones and platform-specific lengths
+- **Multiple Tones**: Choose from 13 different comment tones and 7 post tones (Friendly, Professional, Contrarian, etc.)
+- **Custom Tones**: Create your own custom tones with custom names, emojis, prompts, and guidelines for both comments and posts
 - **DM Suggestions**: Get personalized direct message suggestions
 - **Comment Improvement**: Improve your own comments with AI assistance
 - **Multi-Platform Support**: Works on LinkedIn, X (Twitter), Farcaster, and extensible for other platforms
 - **Customizable Prompts**: Advanced settings to customize AI behavior for each tone
 - **Export/Import Settings**: Backup and restore your custom configurations including custom tones
+- **Magical Loading Animations**: Engaging animations during AI processing
+- **Text Box Preview**: Copy-friendly text area for generated content
 
 ## 📁 File Structure
 
@@ -29,6 +32,8 @@ be-visible/
 ├── 📄 popup.js                   # Popup functionality
 ├── 📄 settings.html              # Settings page interface
 ├── 📄 settings.js                # Settings page functionality
+├── 📄 create.html                # Post creation page interface
+├── 📄 create.js                  # Post creation functionality
 ├── 📄 modal.css                  # Modal-specific styles
 ├── 📄 icon.png                   # Extension icon
 ├── 📁 platforms/                 # Platform-specific implementations
@@ -282,6 +287,35 @@ The extension uses a platform-agnostic architecture:
 - **No Tracking**: No analytics or tracking code
 
 ## 📋 Recent Changes
+
+### Version 1.2 - Post Creation Feature & Enhanced UX
+
+#### 🚀 **New Post Creation Feature**
+
+- **Create Post Page**: New dedicated page for AI-powered post creation
+- **Multi-Platform Support**: Create posts for LinkedIn, X (Twitter), and Farcaster
+- **Custom Post Tones**: 7 default post tones + unlimited custom post tones
+- **Platform-Specific Lengths**: Short, Medium, Long options with platform-appropriate character limits
+- **AI Model Selection**: Choose between GPT-3.5-turbo, GPT-4, and GPT-4o
+- **Text Box Preview**: Copy-friendly textarea for generated posts with character count
+- **Magical Loading Animation**: Engaging "Crafting..." animation with pencil, sparkles, and typing effect
+
+#### 🎨 **Enhanced User Experience**
+
+- **Vertical Navigation**: Sidebar with "Create Post", "Tone Setup", and "Settings" tabs
+- **Tone Management**: Full tone setup interface for post creation (mirrors comment tones)
+- **Emoji Picker**: Searchable emoji picker for custom post tones
+- **Bulk Actions**: Save All/Reset All functionality for post tones
+- **Export/Import**: Post tones included in settings backup/restore
+- **Responsive Design**: Mobile-friendly post creation interface
+
+#### 🔧 **Technical Improvements**
+
+- **Separate Storage**: Post tones stored separately from comment tones (`postTonePrompts`, `postToneGuidelines`, `customPostTones`)
+- **Animation System**: CSS animations with JavaScript restart for reliable loading states
+- **Platform Length Configs**: Dynamic character limits based on platform and length selection
+- **Error Handling**: Improved error handling for post generation
+- **Performance**: Optimized animation rendering and DOM updates
 
 ### Version 1.1 - Major UI/UX Improvements & Branding Update
 

@@ -127,8 +127,6 @@ class ModalManager {
       if (toneLabel) {
         // Remove emoji and clean up the tone name
         currentTone = toneLabel.replace(/^[^\s]*\s*/, "").trim();
-        // Handle special cases where tone names might be different
-        if (currentTone === "Friendly") currentTone = "Agreement with Value";
       }
       toneSelect.value = currentTone;
     }

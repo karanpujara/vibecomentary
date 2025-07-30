@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Be Visible - Create Post</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .container {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* Vertical Navbar Styles */
+      .navbar {
+        width: 250px;
+        background-color: white;
+        border-right: 1px solid #e0e0e0;
+        padding: 20px 0;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .navbar-header {
+        padding: 0 20px 20px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 20px;
+      }
+
+      .navbar-header h2 {
+        margin: 0;
+        color: rgb(139, 92, 246);
+        font-size: 20px;
+        font-weight: 600;
+      }
+
+      .navbar-header p {
+        margin: 5px 0 0 0;
+        color: #666;
+        font-size: 12px;
+      }
+
+      .nav-item {
+        padding: 15px 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .nav-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: rgb(139, 92, 246);
+      }
+
+      .nav-item.active {
+        background-color: rgb(139, 92, 246);
+        color: white;
+        border-left-color: rgb(139, 92, 246);
+      }
+
+      .nav-item.active:hover {
+        background-color: rgb(124, 82, 221);
+      }
+
+      .nav-icon {
+        font-size: 18px;
+        width: 20px;
+        text-align: center;
+      }
+
+      .nav-text {
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      /* Main Content Area */
+      .main-content-area {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .content-section {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding: 20px 0;
+        border-bottom: 2px solid rgb(139, 92, 246);
+      }
+
+      .header h1 {
+        margin: 0;
+        color: rgb(139, 92, 246);
+        font-size: 28px;
+        font-weight: 600;
+      }
+
+      .header p {
+        margin: 10px 0 0 0;
+        color: #666;
+        font-size: 16px;
+      }
+
+      /* Post Tone Setup Header - Matching Comment Tone Design */
+      .post-tone-setup-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+        margin: -20px -20px 30px -20px;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .post-tone-setup-header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        color: white;
+      }
+
+      .post-tone-setup-header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 16px;
+        color: white;
+      }
+
+      .main-content {
+        display: flex;
+        gap: 30px;
+        margin-top: 20px;
+      }
+
+      .form-section {
+        flex: 1;
+        max-width: 500px;
+      }
+
+      .output-section {
+        flex: 1;
+        min-height: 400px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        box-sizing: border-box;
+        transition: border-color 0.2s;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: rgb(139, 92, 246);
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+      }
+
+      .btn {
+        background-color: rgb(139, 92, 246);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: background-color 0.2s;
+      }
+
+      .btn:hover {
+        background-color: rgb(124, 82, 221);
+      }
+
+      .btn:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      .platform-selector {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .platform-btn {
+        flex: 1;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        text-align: center;
+        font-weight: 600;
+        transition: all 0.2s;
+      }
+
+      .platform-btn.active {
+        border-color: rgb(139, 92, 246);
+        background-color: rgb(139, 92, 246);
+        color: white;
+      }
+
+      .platform-btn:hover {
+        border-color: rgb(139, 92, 246);
+      }
+
+      .character-count {
+        text-align: right;
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .character-count.warning {
+        color: #f39c12;
+      }
+
+      .character-count.error {
+        color: #e74c3c;
+      }
+
+      .generated-post {
+        padding: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        display: none;
+        height: 100%;
+        box-sizing: border-box;
+      }
+
+      .generated-post h3 {
+        margin-top: 0;
+        color: rgb(139, 92, 246);
+      }
+
+      .post-content {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+        line-height: 1.5;
+      }
+
+      .post-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+
+      .btn-secondary {
+        background-color: #6c757d;
+      }
+
+      .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+
+      .loading::after {
+        content: "";
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 2px solid #ddd;
+        border-radius: 50%;
+        border-top-color: rgb(139, 92, 246);
+        animation: spin 1s ease-in-out infinite;
+        margin-left: 10px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Content sections */
+      .content-panel {
+        display: none;
+      }
+
+      .content-panel.active {
+        display: block;
+      }
+
+      /* Post Tone Setup Styles - Matching Comment Tone Design */
+      .post-tabs {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 30px;
+      }
+
+      .post-tab {
+        flex: 1;
+        padding: 16px 24px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        color: #6c757d;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+      }
+
+      .post-tab:hover {
+        background: #e9ecef;
+        color: #495057;
+      }
+
+      .post-tab.active {
+        background: white;
+        color: #667eea;
+        border-bottom-color: #667eea;
+      }
+
+      .post-tab-content {
+        display: none;
+        padding: 30px;
+      }
+
+      .post-tab-content.active {
+        display: block;
+      }
+
+      .post-tab-content h2 {
+        margin-top: 0;
+        color: #495057;
+        font-size: 24px;
+        font-weight: 600;
+      }
+
+      .post-tab-content p {
+        color: #6c757d;
+        margin-bottom: 30px;
+      }
+
+      /* Post Tones Grid - Matching Comment Tone Design */
+      .post-tones-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: 24px;
+        margin-bottom: 30px;
+      }
+
+      .post-tone-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .post-tone-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .post-tone-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 16px;
+        position: relative;
+      }
+
+      .post-tone-emoji {
+        font-size: 24px;
+        margin-right: 12px;
+      }
+
+      .post-tone-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .post-tone-type {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .post-tone-type.default {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .post-tone-type.custom {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      .post-tone-card .form-group {
+        margin-bottom: 16px;
+      }
+
+      .post-tone-card .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 14px;
+      }
+
+      .post-tone-card .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 80px;
+        box-sizing: border-box;
+        transition: border-color 0.3s ease;
+      }
+
+      .post-tone-card .form-group textarea:focus {
+        outline: none;
+        border-color: rgb(139, 92, 246);
+        box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      }
+
+      .post-tone-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .post-tone-actions .btn {
+        flex: 1;
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .post-tone-actions .btn-primary {
+        background: rgb(139, 92, 246);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .post-tone-actions .btn-primary:hover {
+        background: rgb(124, 82, 221);
+      }
+
+      .post-tone-actions .btn-secondary {
+        background: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .post-tone-actions .btn-secondary:hover {
+        background: #5a6268;
+      }
+
+      .post-tone-actions .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .post-tone-actions .btn-danger:hover {
+        background: #c82333;
+      }
+
+      /* Emoji Picker Styles for Post Tones */
+      .emoji-input-wrapper {
+        position: relative;
+        cursor: pointer;
+      }
+
+      .emoji-input-wrapper input {
+        cursor: pointer;
+      }
+
+      .emoji-picker-btn {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+      }
+
+      .emoji-picker-btn:hover {
+        background: #f8f9fa;
+      }
+
+      .emoji-picker-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background: white;
+        border-radius: 8px;
+        width: 400px;
+        max-height: 400px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        border: 1px solid #ddd;
+        z-index: 1000;
+        margin-top: 4px;
+        cursor: default;
+        display: none;
+      }
+
+      .emoji-search-container {
+        padding: 8px;
+        border-bottom: 1px solid #eee;
+        background: #fafbfc;
+      }
+
+      .emoji-search {
+        width: 100%;
+        padding: 8px 12px 8px 32px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 14px;
+        background: #f5f6fa;
+        outline: none;
+        transition: border 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+      }
+
+      .emoji-search:focus {
+        border: 1.5px solid #007bff;
+        box-shadow: 0 0 0 2px #e3f0ff;
+      }
+
+      .emoji-categories {
+        display: flex;
+        border-bottom: 1px solid #eee;
+        overflow-x: auto;
+      }
+
+      .emoji-grid {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 16px;
+      }
+
+      .emoji-button {
+        width: 40px;
+        height: 40px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 24px;
+        border-radius: 6px;
+        margin: 2px;
+        transition: background 0.2s ease;
+      }
+
+      .emoji-button:hover {
+        background: #f0f0f0;
+      }
+
+      .category-tab {
+        padding: 12px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        font-size: 20px;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+      }
+
+      .category-tab.active {
+        border-bottom-color: #007bff;
+        color: #007bff;
+      }
+
+      #customPostToneEmoji::placeholder {
+        color: #b0b8c1;
+        font-size: 14px;
+        font-family: inherit;
+        opacity: 1;
+      }
+
+      /* Magic Writing Animation Styles */
+      .magic-writing-animation {
+        position: relative;
+        height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .pencil-container {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      .pencil {
+        font-size: 48px;
+        animation: pencilWrite 2s ease-in-out infinite;
+        position: relative;
+        z-index: 2;
+      }
+
+      .pencil-trail {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(90deg, rgb(139, 92, 246), #ff6b6b, #4ecdc4);
+        border-radius: 1px;
+        animation: pencilTrail 2s ease-in-out infinite;
+        z-index: 1;
+      }
+
+      .sparkles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+
+      .sparkle {
+        position: absolute;
+        font-size: 20px;
+        animation: sparkleFloat 3s ease-in-out infinite;
+        opacity: 0;
+      }
+
+      .sparkle:nth-child(1) {
+        top: 20%;
+        left: 20%;
+        animation-delay: 0s;
+      }
+      .sparkle:nth-child(2) {
+        top: 30%;
+        right: 25%;
+        animation-delay: 0.5s;
+      }
+      .sparkle:nth-child(3) {
+        bottom: 40%;
+        left: 30%;
+        animation-delay: 1s;
+      }
+      .sparkle:nth-child(4) {
+        bottom: 30%;
+        right: 20%;
+        animation-delay: 1.5s;
+      }
+      .sparkle:nth-child(5) {
+        top: 50%;
+        left: 50%;
+        animation-delay: 2s;
+      }
+
+      .writing-text {
+        margin-top: 20px;
+        font-size: 24px;
+        font-weight: 600;
+        color: rgb(139, 92, 246);
+        letter-spacing: 2px;
+      }
+
+      .writing-char {
+        display: inline-block;
+        opacity: 0;
+        animation: charAppear 0.3s ease-in-out forwards;
+      }
+
+      .writing-char:nth-child(1) {
+        animation-delay: 0.2s;
+      }
+      .writing-char:nth-child(2) {
+        animation-delay: 0.4s;
+      }
+      .writing-char:nth-child(3) {
+        animation-delay: 0.6s;
+      }
+      .writing-char:nth-child(4) {
+        animation-delay: 0.8s;
+      }
+      .writing-char:nth-child(5) {
+        animation-delay: 1s;
+      }
+      .writing-char:nth-child(6) {
+        animation-delay: 1.2s;
+      }
+      .writing-char:nth-child(7) {
+        animation-delay: 1.4s;
+      }
+      .writing-char:nth-child(8) {
+        animation-delay: 1.6s;
+      }
+      .writing-char:nth-child(9) {
+        animation-delay: 1.8s;
+      }
+      .writing-char:nth-child(10) {
+        animation-delay: 2s;
+      }
+      .writing-char:nth-child(11) {
+        animation-delay: 2.2s;
+      }
+
+      @keyframes pencilWrite {
+        0%,
+        100% {
+          transform: translateX(-20px) rotate(-5deg);
+        }
+        25% {
+          transform: translateX(0px) rotate(0deg);
+        }
+        50% {
+          transform: translateX(20px) rotate(5deg);
+        }
+        75% {
+          transform: translateX(0px) rotate(0deg);
+        }
+      }
+
+      @keyframes pencilTrail {
+        0% {
+          width: 0;
+          opacity: 0;
+        }
+        25% {
+          width: 60px;
+          opacity: 1;
+        }
+        50% {
+          width: 120px;
+          opacity: 1;
+        }
+        75% {
+          width: 60px;
+          opacity: 1;
+        }
+        100% {
+          width: 0;
+          opacity: 0;
+        }
+      }
+
+      @keyframes sparkleFloat {
+        0% {
+          transform: translateY(0px) scale(0);
+          opacity: 0;
+        }
+        25% {
+          transform: translateY(-10px) scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: translateY(-20px) scale(1.2);
+          opacity: 0.8;
+        }
+        75% {
+          transform: translateY(-30px) scale(1);
+          opacity: 0.5;
+        }
+        100% {
+          transform: translateY(-40px) scale(0);
+          opacity: 0;
+        }
+      }
+
+      @keyframes charAppear {
+        0% {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0px);
+        }
+      }
+
+      /* Post Preview Textarea Styles */
+      .post-preview-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .post-preview-textarea {
+        width: 100%;
+        min-height: 300px;
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 14px;
+        line-height: 1.6;
+        resize: vertical;
+        background-color: #fafafa;
+        color: #333;
+        transition: border-color 0.3s ease;
+      }
+
+      .post-preview-textarea:focus {
+        outline: none;
+        border-color: rgb(139, 92, 246);
+        background-color: #fff;
+      }
+
+      .post-preview-textarea::placeholder {
+        color: #999;
+        font-style: italic;
+      }
+
+      .post-preview-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 10px;
+      }
+
+      .character-count {
+        font-size: 12px;
+        color: #666;
+        font-weight: 500;
+      }
+
+      /* Responsive design for smaller screens */
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+        }
+
+        .navbar {
+          width: 100%;
+          border-right: none;
+          border-bottom: 1px solid #e0e0e0;
+        }
+
+        .main-content {
+          flex-direction: column;
+          gap: 20px;
+        }
+
+        .form-section,
+        .output-section {
+          max-width: none;
+        }
+
+        .main-content-area {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Vertical Navbar -->
+      <div class="navbar">
+        <div class="navbar-header">
+          <h2>🎯 Be Visible</h2>
+          <p>AI-Powered Social Media</p>
+        </div>
+
+        <div class="nav-item active" data-panel="create-post">
+          <span class="nav-icon">📝</span>
+          <span class="nav-text">Create Post</span>
+        </div>
+
+        <div class="nav-item" data-panel="tone-setup">
+          <span class="nav-icon">🎭</span>
+          <span class="nav-text">Tone Setup</span>
+        </div>
+
+        <div class="nav-item" data-panel="settings">
+          <span class="nav-icon">⚙️</span>
+          <span class="nav-text">Settings</span>
+        </div>
+      </div>
+
+      <!-- Main Content Area -->
+      <div class="main-content-area">
+        <!-- Create Post Panel -->
+        <div id="create-post-panel" class="content-panel active">
+          <div class="content-section">
+            <div class="header">
+              <h1>📝 Create Post</h1>
+              <p>Generate engaging posts for your social media platforms</p>
+            </div>
+
+            <div class="main-content">
+              <div class="form-section">
+                <form id="createPostForm">
+                  <div class="form-group">
+                    <label for="platform">🎯 Select Platform:</label>
+                    <div class="platform-selector">
+                      <div class="platform-btn active" data-platform="linkedin">
+                        💼 LinkedIn
+                      </div>
+                      <div class="platform-btn" data-platform="x">
+                        🐦 X (Twitter)
+                      </div>
+                      <div class="platform-btn" data-platform="farcaster">
+                        🔮 Farcaster
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="topic"
+                      >💡 What would you like to post about?</label
+                    >
+                    <textarea
+                      id="topic"
+                      placeholder="Describe your topic, idea, or what you want to share... (e.g., 'Share insights about AI in business', 'Announce a new product launch', 'Ask for feedback on a project')"
+                      rows="4"
+                      required
+                    ></textarea>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="tone">🎭 Select Tone:</label>
+                    <select id="tone" required>
+                      <option value="">Choose a tone...</option>
+                      <option value="Professional">💼 Professional</option>
+                      <option value="Casual">😊 Casual</option>
+                      <option value="Educational">📚 Educational</option>
+                      <option value="Storytelling">📖 Storytelling</option>
+                      <option value="Question">❓ Question</option>
+                      <option value="Announcement">📢 Announcement</option>
+                      <option value="Insight">💡 Insight</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="modelSelect">🧠 Select AI Model:</label>
+                    <select id="modelSelect" class="dropdown">
+                      <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                      <option value="gpt-4">GPT-4</option>
+                      <option value="gpt-4o">GPT-4o</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="lengthSelect">📏 Post Length:</label>
+                    <select id="lengthSelect" class="dropdown">
+                      <option value="short">Short</option>
+                      <option value="medium" selected>Medium</option>
+                      <option value="long">Long</option>
+                    </select>
+                    <div
+                      id="lengthInfo"
+                      class="length-info"
+                      style="font-size: 12px; color: #666; margin-top: 4px"
+                    >
+                      Medium: ~1500 characters
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <button type="submit" id="generateBtn" class="btn">
+                      ✨ Generate Post
+                    </button>
+                  </div>
+                </form>
+
+                <div id="loading" class="loading" style="display: none">
+                  Generating your post...
+                </div>
+              </div>
+
+              <div class="output-section">
+                <!-- Loading Animation -->
+                <div
+                  id="loadingAnimation"
+                  class="generated-post"
+                  style="display: none; text-align: center; padding: 40px 20px"
+                >
+                  <div class="magic-writing-animation">
+                    <div class="pencil-container">
+                      <div class="pencil">✏️</div>
+                      <div class="pencil-trail"></div>
+                    </div>
+                    <div class="sparkles">
+                      <span class="sparkle">✨</span>
+                      <span class="sparkle">⭐</span>
+                      <span class="sparkle">💫</span>
+                      <span class="sparkle">🌟</span>
+                      <span class="sparkle">✨</span>
+                    </div>
+                    <div class="writing-text">
+                      <span class="writing-char">C</span>
+                      <span class="writing-char">r</span>
+                      <span class="writing-char">a</span>
+                      <span class="writing-char">f</span>
+                      <span class="writing-char">t</span>
+                      <span class="writing-char">i</span>
+                      <span class="writing-char">n</span>
+                      <span class="writing-char">g</span>
+                      <span class="writing-char">.</span>
+                      <span class="writing-char">.</span>
+                      <span class="writing-char">.</span>
+                    </div>
+                  </div>
+                  <p style="margin-top: 30px; color: #666; font-size: 14px">
+                    ✨ Crafting your perfect post with AI magic ✨
+                  </p>
+                </div>
+
+                <div id="generatedPost" class="generated-post">
+                  <h3>✅ Generated Post</h3>
+                  <div class="post-preview-container">
+                    <textarea
+                      id="postContent"
+                      class="post-preview-textarea"
+                      placeholder="Your generated post will appear here..."
+                      readonly
+                    ></textarea>
+                    <div class="post-preview-actions">
+                      <div class="character-count" id="characterCount"></div>
+                      <div class="action-buttons">
+                        <button id="copyBtn" class="btn">📋 Copy</button>
+                        <button id="regenerateBtn" class="btn btn-secondary">
+                          🔄 Regenerate
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Placeholder when no post is generated -->
+                <div
+                  id="placeholder"
+                  class="generated-post"
+                  style="display: block; opacity: 0.7; border: 2px dashed #ddd"
+                >
+                  <h3>📝 Ready to Generate</h3>
+                  <div
+                    class="post-content"
+                    style="
+                      text-align: center;
+                      padding: 60px 20px;
+                      color: #666;
+                      background: #fafafa;
+                    "
+                  >
+                    <p style="font-size: 16px; margin-bottom: 20px">
+                      Fill in the form on the left and click "Generate Post" to
+                      create your content.
+                    </p>
+                    <p style="font-size: 64px; margin: 20px 0; opacity: 0.5">
+                      ✨
+                    </p>
+                    <p style="font-size: 14px; opacity: 0.8">
+                      Your generated post will appear here
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tone Setup Panel -->
+        <div id="tone-setup-panel" class="content-panel">
+          <div class="content-section">
+            <div class="post-tone-setup-header">
+              <h1>🎯 Be Visible Post Tone Settings</h1>
+              <p>Configure your AI-powered post creation tones</p>
+            </div>
+
+            <!-- Post Tone Setup Tabs -->
+            <div class="post-tabs">
+              <button class="post-tab active" data-post-tab="post-tones">
+                Post Tones
+              </button>
+              <button class="post-tab" data-post-tab="add-post-tone">
+                Add Post Tone
+              </button>
+            </div>
+
+            <!-- Tones Tab -->
+            <div id="post-tones" class="post-tab-content active">
+              <h2>🎨 Post Tone Management</h2>
+              <p>Configure and customize your post creation tones.</p>
+
+              <div class="post-tones-grid" id="postTonesGrid">
+                <!-- Post tones will be populated by JavaScript -->
+              </div>
+
+              <div
+                class="form-group"
+                style="
+                  margin-top: 30px;
+                  padding-top: 20px;
+                  border-top: 1px solid #e9ecef;
+                  text-align: center;
+                "
+              >
+                <h3>💾 Bulk Actions</h3>
+                <p>Save or reset all post tones at once.</p>
+                <button id="saveAllPostTonesBtn" class="btn btn-success">
+                  Save All Post Tones
+                </button>
+                <button id="resetAllPostTonesBtn" class="btn btn-secondary">
+                  Reset All to Default
+                </button>
+              </div>
+            </div>
+
+            <!-- Add Post Tone Tab -->
+            <div id="add-post-tone" class="post-tab-content">
+              <h2>➕ Create Custom Post Tone</h2>
+              <p>Add your own personalized tone for post creation.</p>
+
+              <div class="form-group">
+                <label for="customPostToneName">Tone Name:</label>
+                <input
+                  type="text"
+                  id="customPostToneName"
+                  placeholder="e.g., Professional, Casual, Humorous"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="customPostToneEmoji">Emoji:</label>
+                <div class="emoji-input-wrapper">
+                  <input
+                    type="text"
+                    id="customPostToneEmoji"
+                    placeholder="Click to pick an emoji"
+                    readonly
+                  />
+                  <button
+                    type="button"
+                    id="postEmojiPickerBtn"
+                    class="emoji-picker-btn"
+                  >
+                    😀
+                  </button>
+
+                  <!-- Emoji Picker Dropdown -->
+                  <div
+                    id="postEmojiPickerDropdown"
+                    class="emoji-picker-dropdown"
+                  >
+                    <!-- Search Bar -->
+                    <div class="emoji-search-container">
+                      <div style="position: relative">
+                        <input
+                          type="text"
+                          id="postEmojiSearch"
+                          placeholder="Search emojis"
+                          class="emoji-search"
+                        />
+                        <span
+                          style="
+                            position: absolute;
+                            left: 10px;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            color: #b0b8c1;
+                            font-size: 14px;
+                            pointer-events: none;
+                          "
+                          >🔍</span
+                        >
+                      </div>
+                    </div>
+
+                    <!-- Category Tabs -->
+                    <div id="postEmojiCategories" class="emoji-categories">
+                      <!-- Categories will be populated by JS -->
+                    </div>
+
+                    <!-- Emoji Grid -->
+                    <div id="postEmojiGrid" class="emoji-grid">
+                      <!-- Emojis will be populated by JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="customPostTonePrompt">Prompt Text:</label>
+                <textarea
+                  id="customPostTonePrompt"
+                  placeholder="Write your custom prompt instructions here..."
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="customPostToneGuideline">Guideline Text:</label>
+                <textarea
+                  id="customPostToneGuideline"
+                  placeholder="Write your custom guidelines here..."
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <button id="createCustomPostToneBtn" class="btn btn-success">
+                  Create Custom Post Tone
+                </button>
+                <button id="clearCustomPostToneBtn" class="btn btn-secondary">
+                  Clear Form
+                </button>
+              </div>
+
+              <!-- Custom Post Tones Management Grid -->
+              <div
+                class="post-tones-grid"
+                id="addPostToneCustomTonesGrid"
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(3, 1fr);
+                  gap: 20px;
+                  margin-top: 30px;
+                "
+              >
+                <!-- Custom post tones will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="content-panel">
+          <div class="content-section">
+            <div class="header">
+              <h1>⚙️ Settings</h1>
+              <p>Configure your Be Visible extension settings</p>
+            </div>
+            <div style="text-align: center; padding: 100px 20px; color: #666">
+              <h3>⚙️ Settings Coming Soon</h3>
+              <p>This will redirect you to the main extension settings page.</p>
+              <button
+                class="btn"
+                onclick="window.open('settings.html', '_blank')"
+              >
+                Open Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="create.js"></script>
+  </body>
+</html>
