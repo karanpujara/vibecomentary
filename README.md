@@ -34,18 +34,23 @@ be-visible/
 ├── 📄 settings.js                # Settings page functionality
 ├── 📄 create.html                # Post creation page interface
 ├── 📄 create.js                  # Post creation functionality
+├── 📄 general-settings.html      # General settings page interface
+├── 📄 general-settings.js        # General settings functionality
+├── 📄 welcome.html               # Welcome page
+├── 📄 welcome.js                 # Welcome page functionality
+├── 📄 guide.html                 # User guide page
 ├── 📄 modal.css                  # Modal-specific styles
 ├── 📄 icon.png                   # Extension icon
+├── 📄 icon.svg                   # Extension icon source
 ├── 📁 platforms/                 # Platform-specific implementations
 │   ├── 📄 basePlatform.js        # Base platform interface
 │   ├── 📄 linkedin.js            # LinkedIn-specific logic
 │   ├── 📄 x.js                   # X (Twitter) specific logic
 │   └── 📄 farcaster.js           # Farcaster-specific logic
-├── 📁 styles/                    # Platform-specific CSS
-│   ├── 📄 base.css               # Base styles for all platforms
-│   ├── 📄 linkedin.css           # LinkedIn-specific styles
-│   └── 📄 x.css                  # X (Twitter) specific styles
-└── 📁 backup VB/                 # Backup of original working code
+└── 📁 styles/                    # Platform-specific CSS
+    ├── 📄 base.css               # Base styles for all platforms
+    ├── 📄 linkedin.css           # LinkedIn-specific styles
+    └── 📄 x.css                  # X (Twitter) specific styles
 ```
 
 ## 🏗️ Architecture Overview
@@ -241,6 +246,7 @@ The extension uses a platform-agnostic architecture:
    - Navigate to LinkedIn, X, or Farcaster
    - Look for "📝✨" buttons under posts
    - Click to generate AI-powered comments and DMs
+   - Use "📝 Create Post" button in popup for post creation
 
 ## 🎨 Customization
 
@@ -288,11 +294,11 @@ The extension uses a platform-agnostic architecture:
 
 ## 📋 Recent Changes
 
-### Version 1.2 - Post Creation Feature & Enhanced UX
+### Version 1.0 - Complete Feature Set & Platform Support
 
-#### 🚀 **New Post Creation Feature**
+#### 🚀 **Post Creation Feature**
 
-- **Create Post Page**: New dedicated page for AI-powered post creation
+- **Create Post Page**: Dedicated page for AI-powered post creation with vertical navigation
 - **Multi-Platform Support**: Create posts for LinkedIn, X (Twitter), and Farcaster
 - **Custom Post Tones**: 7 default post tones + unlimited custom post tones
 - **Platform-Specific Lengths**: Short, Medium, Long options with platform-appropriate character limits
@@ -316,25 +322,6 @@ The extension uses a platform-agnostic architecture:
 - **Platform Length Configs**: Dynamic character limits based on platform and length selection
 - **Error Handling**: Improved error handling for post generation
 - **Performance**: Optimized animation rendering and DOM updates
-
-### Version 1.1 - Major UI/UX Improvements & Branding Update
-
-#### 🎨 **Branding & Visual Updates**
-
-- **Extension Rename**: Changed from "VibeCommentary" to "Be Visible"
-- **Icon Update**: New purple icon with magic emoji (✨) instead of blue dot
-- **Button Text**: Changed from "💬 Suggest Comments" to "📝✨" across all platforms
-- **Modal Header**: Added "🎯 Be Visible" heading with subtitle in suggestion modal
-- **Color Scheme**: Unified purple theme (`rgb(139, 92, 246)`) across all UI elements
-
-#### 🔧 **Button Design & Positioning**
-
-- **LinkedIn**: Button positioned above comment button, centered
-- **X (Twitter)**: Maintained existing positioning with updated design
-- **Farcaster**: Maintained existing positioning with updated design
-- **Button Size**: Reduced padding and made buttons more compact
-- **Border Style**: Added consistent purple border (`2px solid #8B5CF6`) across all platforms
-- **Shape**: Changed to square/rectangular design (`border-radius: 8px`) for modern look
 
 #### 🎯 **Custom Tones Feature**
 
@@ -366,16 +353,30 @@ The extension uses a platform-agnostic architecture:
 - **Error Handling**: Better error handling for custom tone operations
 - **Performance**: Optimized button injection and modal rendering
 
-### Version 1.0 - Farcaster Support Added
+#### 🎨 **Branding & Visual Updates**
 
-- **New Platform**: Added full support for Farcaster.xyz
-- **Platform Detection**: Automatic detection of Farcaster pages
-- **Cast Support**: Generate AI-powered replies to Farcaster casts
-- **DM Support**: Generate personalized messages for Farcaster users
-- **Purple Theme**: Farcaster-specific styling with purple color scheme
-- **Content Types**: Support for "Cast" (replies) and "Message" (DMs)
-- **Character Limits**: Platform-appropriate character limits for Farcaster
-- **Platform-Specific Prompts**: Optimized prompts for Farcaster's community
+- **Extension Name**: "Be Visible" - professional and memorable branding
+- **Icon Update**: Purple icon with magic emoji (✨) for modern look
+- **Button Text**: Changed to "📝✨" for subtle and professional appearance
+- **Modal Header**: Added "🎯 Be Visible" heading with subtitle
+- **Color Scheme**: Unified purple theme (`rgb(139, 92, 246)`) across all UI elements
+
+#### 🔧 **Button Design & Positioning**
+
+- **LinkedIn**: Button positioned above comment button, centered
+- **X (Twitter)**: Maintained existing positioning with updated design
+- **Farcaster**: Maintained existing positioning with updated design
+- **Button Size**: Reduced padding and made buttons more compact
+- **Border Style**: Added consistent purple border across all platforms
+- **Shape**: Changed to square/rectangular design for modern look
+
+#### 🌐 **Multi-Platform Support**
+
+- **LinkedIn**: Full support for LinkedIn posts and comments
+- **X (Twitter)**: Complete integration with X's interface
+- **Farcaster**: Full support for Farcaster casts and replies
+- **Platform Detection**: Automatic detection and appropriate styling
+- **Character Limits**: Platform-specific character limits and formatting
 
 ## 🐛 Troubleshooting
 

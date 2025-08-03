@@ -4,35 +4,54 @@
  */
 class AIService {
   constructor() {
-    this.activePostElement = null;
+    this.activePost = null;
   }
 
   setActivePost(post) {
-    this.activePostElement = post;
+    this.activePost = post;
+  }
+
+  async getSelectedModel() {
+    try {
+      return new Promise((resolve) => {
+        chrome.storage.local.get(["vibeModel"], (res) => {
+          resolve(res.vibeModel || "gpt-3.5-turbo");
+        });
+      });
+    } catch (error) {
+      console.error("Error getting selected model:", error);
+      return "gpt-3.5-turbo"; // Fallback to default
+    }
   }
 
   /**
-   * Get selected model from storage
+   * Validate API key with basic checks only
+   * OpenAI API keys can vary in length, so we only check essential format
    */
-  async getSelectedModel() {
-    return new Promise((resolve, reject) => {
-      try {
-        if (typeof chrome === "undefined" || !chrome.storage) {
-          reject(new Error("Chrome extension APIs not available"));
-          return;
-        }
+  validateAPIKey(apiKey) {
+    if (!apiKey || typeof apiKey !== "string") {
+      return { valid: false, error: "API key is required" };
+    }
 
-        chrome.storage.local.get(["vibeModel"], (res) => {
-          if (chrome.runtime.lastError) {
-            reject(new Error(chrome.runtime.lastError.message));
-          } else {
-            resolve(res.vibeModel || "gpt-3.5-turbo");
-          }
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
+    if (!apiKey.startsWith("sk-")) {
+      return { valid: false, error: "API key must start with sk-" };
+    }
+
+    // Only check for obvious issues like whitespace
+    if (
+      apiKey.includes(" ") ||
+      apiKey.includes("\n") ||
+      apiKey.includes("\t")
+    ) {
+      return { valid: false, error: "API key contains invalid characters" };
+    }
+
+    // Very basic length check - just ensure it's not obviously wrong
+    if (apiKey.length < 5) {
+      return { valid: false, error: "API key seems too short" };
+    }
+
+    return { valid: true };
   }
 
   /**
@@ -40,101 +59,75 @@ class AIService {
    */
   async fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
     try {
-      const selectedModel = await this.getSelectedModel();
+      // Validate API key first
+      const validation = this.validateAPIKey(apiKey);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
 
-      // Get platform-specific data
+      const model = await this.getSelectedModel();
       const platform = this.getCurrentPlatform();
-      const authorName = platform
-        ? platform.extractAuthorName(postEl || this.activePostElement)
-        : "the author";
-      const userProfileName = platform
-        ? platform.extractUserProfileName()
-        : "Your Name";
 
-      // Debug logging for author name extraction
-      console.log("🔍 Author name extraction debug:");
-      console.log(
-        "📝 Platform:",
-        platform ? platform.getPlatformName() : "None"
-      );
-      console.log("👤 Extracted author name:", authorName);
-      console.log("👤 User profile name:", userProfileName);
-      console.log("📄 Post element:", postEl || this.activePostElement);
-
-      // Handle null userProfileName gracefully
-      const safeUserProfileName = userProfileName || "Your Name";
-
-      // Get custom prompts, guidelines, and tones from storage, fallback to platform-specific or default
+      // Get custom prompts and guidelines
       const customPrompts = await this.getCustomPrompts();
       const customGuidelines = await this.getCustomGuidelines();
       const customTones = await this.getCustomTones();
 
-      // Use custom prompts if available, otherwise use platform-specific or default
-      let prompts =
-        customPrompts ||
-        (platform ? platform.getDefaultPrompts() : this.getDefaultPrompts());
+      // Determine prompt and guideline
+      let prompt, guideline;
 
-      // For guidelines, merge custom with defaults to ensure all tones have guidelines
-      const defaultGuidelines = platform
-        ? platform.getDefaultGuidelines()
-        : this.getDefaultGuidelines();
-
-      let guidelines = customGuidelines
-        ? { ...defaultGuidelines, ...customGuidelines } // Merge defaults with custom
-        : defaultGuidelines;
-
-      // Add custom tones to prompts and guidelines
-      if (customTones) {
-        Object.keys(customTones).forEach((toneName) => {
-          const customTone = customTones[toneName];
-          prompts[toneName] = customTone.prompt;
-          guidelines[toneName] = customTone.guideline;
-        });
+      if (customTones && customTones[tone]) {
+        // Custom tone
+        prompt = customTones[tone].prompt;
+        guideline = customTones[tone].guideline;
+      } else if (customPrompts && customPrompts[tone]) {
+        // Custom prompt for default tone
+        prompt = customPrompts[tone];
+        guideline =
+          customGuidelines && customGuidelines[tone]
+            ? customGuidelines[tone]
+            : this.getDefaultGuidelines()[tone] || "";
+      } else {
+        // Default tone
+        prompt =
+          this.getDefaultPrompts()[tone] ||
+          "Write 2 engaging comments for this post.";
+        guideline = this.getDefaultGuidelines()[tone] || "";
       }
 
-      const prompt = prompts[tone] || this.getDefaultPrompts()[tone];
-      const guidelineRaw =
-        guidelines[tone] || this.getDefaultGuidelines()[tone];
-
-      // Debug logging to verify custom prompts are being used
-      console.log("🎯 Using prompts for tone:", tone);
-      console.log("📝 Custom prompts available:", !!customPrompts);
-      console.log("📋 Custom guidelines available:", !!customGuidelines);
-      console.log("🔧 Final prompt:", prompt);
-      console.log("📋 Final guideline:", guidelineRaw);
-      console.log("📋 Custom guidelines object:", customGuidelines);
-      console.log("📋 Guidelines for this tone:", guidelines[tone]);
-
-      // Process author name replacement
-      let firstNameWithPrefix = authorName;
-      const guideline = guidelineRaw.replace(
-        /\$\{firstNameWithPrefix\}/g,
-        firstNameWithPrefix
-      );
-
-      // Debug logging for author name processing
-      console.log("🔍 Author name processing debug:");
-      console.log("👤 Raw author name:", authorName);
-      console.log("👤 Processed firstNameWithPrefix:", firstNameWithPrefix);
-      console.log("📋 Guideline with replacement:", guideline);
-
-      // Ensure the prompt requests 2 comments if it doesn't already
-      let enhancedPrompt = prompt;
+      // Ensure prompt requests exactly 2 comments
       if (
         !prompt.toLowerCase().includes("write 2") &&
         !prompt.toLowerCase().includes("2 comments")
       ) {
-        enhancedPrompt = `Write 2 ${prompt}`;
-        console.log(
-          "🔧 Enhanced custom prompt to request 2 comments:",
-          enhancedPrompt
-        );
+        prompt = `Write 2 ${prompt}`;
       }
 
-      const finalPrompt = `${enhancedPrompt}
+      // Extract author name and user profile name
+      let authorName = "the author";
+      let userProfileName = "";
+
+      if (platform && postEl) {
+        try {
+          authorName = platform.extractAuthorName(postEl) || "the author";
+          userProfileName = platform.extractUserProfileName() || "";
+        } catch (error) {
+          console.error("Error extracting names:", error);
+        }
+      }
+
+      // Process author name replacement
+      let firstNameWithPrefix = authorName;
+      const processedGuideline = guideline.replace(
+        /\$\{firstNameWithPrefix\}/g,
+        firstNameWithPrefix
+      );
+
+      // Build the comment prompt
+      const commentPrompt = `${prompt}
 
 Guidelines:
-${guideline}
+${processedGuideline}
 
 IMPORTANT: 
 - When addressing the author, use "${firstNameWithPrefix}" (the author's name) and NOT any names mentioned in the post content.
@@ -147,10 +140,12 @@ Please format your response with each comment on a separate line, separated by a
 Post:
 "${postText}"`;
 
-      // Create DM prompt like the working backup
+      // Build the DM prompt
       const platformName = platform
         ? platform.getPlatformName()
         : "this platform";
+      const safeUserProfileName = userProfileName || "Your Name";
+
       const dmPrompt = `Write a short, personalized DM message I can send to ${firstNameWithPrefix} on ${platformName} in a "${tone}" tone. 
 
 IMPORTANT INSTRUCTIONS:
@@ -168,34 +163,23 @@ ${safeUserProfileName}
 Post they shared:
 "${postText}"`;
 
-      console.log("🤖 Sending requests to OpenAI...");
-      console.log("🧠 Selected model:", selectedModel);
-      console.log("📝 Comment prompt:", finalPrompt);
-      console.log("📝 DM prompt:", dmPrompt);
-
-      // Make separate API calls for comments and DM like the working backup
+      // Make separate API calls for comments and DM
       let commentRes, dmRes;
       try {
         [commentRes, dmRes] = await Promise.all([
-          this.makeAPIRequest(finalPrompt, apiKey, selectedModel),
-          this.makeAPIRequest(dmPrompt, apiKey, selectedModel),
+          this.makeAPIRequest(commentPrompt, apiKey, model),
+          this.makeAPIRequest(dmPrompt, apiKey, model),
         ]);
 
         const commentData = await commentRes.json();
         const dmData = await dmRes.json();
-
-        console.log("📊 Comment response:", commentData);
-        console.log("📊 DM response:", dmData);
 
         if (commentData.error) {
           console.error(
             "❌ OpenAI API Error Details:",
             JSON.stringify(commentData.error, null, 2)
           );
-
-          // Show user-friendly alert based on error type
           this.showOpenAIErrorAlert(commentData.error);
-
           throw new Error(
             `OpenAI API Error: ${commentData.error.message} (Type: ${
               commentData.error.type || "unknown"
@@ -222,7 +206,7 @@ Post they shared:
           throw new Error("No content received from OpenAI for comments");
         }
 
-        // Parse comments using the working backup logic
+        // Parse comments using the original logic
         const parsed = this.parseAIResponse(
           commentContent,
           platform,
@@ -338,6 +322,8 @@ Post they shared:
         );
       }
     } catch (error) {
+      console.error("Error fetching suggestions:", error);
+      this.showOpenAIErrorAlert(error);
       throw error;
     }
   }

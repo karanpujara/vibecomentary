@@ -33,4 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("openGuide").addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("guide.html") });
   });
+
+  document.getElementById("openSettingsPage").addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("general-settings.html") });
+  });
 });

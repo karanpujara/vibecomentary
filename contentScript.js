@@ -1,5 +1,103 @@
-console.log("✅ Content script loaded");
-console.log("📍 Current URL:", window.location.href);
+// Debug mode toggle - can be enabled via settings
+const DEBUG_MODE = false;
+
+// Logger utility for conditional debug logging
+class Logger {
+  static debug(...args) {
+    if (DEBUG_MODE) {
+      console.log("[DEBUG]", ...args);
+    }
+  }
+
+  static error(...args) {
+    console.error("[ERROR]", ...args);
+  }
+
+  static info(...args) {
+    if (DEBUG_MODE) {
+      console.log("[INFO]", ...args);
+    }
+  }
+}
+
+// Error handler utility
+class ErrorHandler {
+  static handle(error, context) {
+    Logger.error(`Error in ${context}:`, error);
+
+    const userMessage = this.getUserFriendlyMessage(error);
+    this.showNotification(userMessage, "error");
+  }
+
+  static getUserFriendlyMessage(error) {
+    if (error.message.includes("API key")) {
+      return "Please check your API key in settings";
+    }
+    if (error.message.includes("network")) {
+      return "Network error. Please check your connection";
+    }
+    if (error.message.includes("rate limit")) {
+      return "Too many requests. Please wait a moment and try again";
+    }
+    return "An unexpected error occurred. Please try again.";
+  }
+
+  static showNotification(message, type = "info") {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `vibe-notification vibe-notification-${type}`;
+    notification.textContent = message;
+
+    // Add styles
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      max-width: 300px;
+      word-wrap: break-word;
+      animation: vibeSlideIn 0.3s ease-out;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    `;
+
+    // Set background color based on type
+    switch (type) {
+      case "success":
+        notification.style.backgroundColor = "#10b981";
+        break;
+      case "error":
+        notification.style.backgroundColor = "#ef4444";
+        break;
+      case "warning":
+        notification.style.backgroundColor = "#f59e0b";
+        break;
+      default:
+        notification.style.backgroundColor = "#3b82f6";
+    }
+
+    // Add animation styles
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes vibeSlideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      notification.remove();
+      style.remove();
+    }, 5000);
+  }
+}
 
 // Initialize services
 let platformManager = null;
@@ -10,6 +108,9 @@ let aiService = null;
 // Initialize the architecture
 async function initializeServices() {
   try {
+    Logger.debug("✅ Content script loaded");
+    Logger.debug("📍 Current URL:", window.location.href);
+
     // Initialize all services
     platformManager = new PlatformManager();
     cssManager = new CSSManager();
@@ -63,112 +164,131 @@ function isExtensionContextValid() {
   );
 }
 
-// Inject buttons under posts
+// Inject button under post with improved error handling
 function injectButtonUnderPost() {
-  console.log("🔍 injectButtonUnderPost called");
-  console.log("📊 Platform manager:", !!platformManager);
-  console.log(
-    "🎯 Is supported platform:",
-    platformManager?.isSupportedPlatform()
-  );
+  try {
+    Logger.debug("🔍 injectButtonUnderPost called");
+    Logger.debug("📊 Platform manager:", !!platformManager);
 
-  // Use platform manager if available, otherwise fall back to old logic
-  if (platformManager && platformManager.isSupportedPlatform()) {
-    console.log("✅ Using platform manager injection");
-    injectButtonWithPlatformManager();
-  } else {
-    console.log("⚠️ Using legacy injection");
-    injectButtonWithLegacyLogic();
+    if (!platformManager) {
+      Logger.error("Platform manager not initialized");
+      return;
+    }
+
+    const platform = platformManager.getCurrentPlatform();
+    if (platform) {
+      Logger.debug("✅ Using platform manager injection");
+      injectButtonWithPlatformManager();
+    } else {
+      Logger.debug("⚠️ Using legacy injection");
+      injectButtonWithLegacyLogic();
+    }
+  } catch (error) {
+    ErrorHandler.handle(error, "injectButtonUnderPost");
   }
 }
 
+// Process posts with platform manager
 function injectButtonWithPlatformManager() {
-  const platform = platformManager.getCurrentPlatform();
-  const posts = platform.findPosts();
+  try {
+    const platform = platformManager.getCurrentPlatform();
+    if (!platform) {
+      Logger.error("No platform detected");
+      return;
+    }
 
-  console.log(
-    `🔍 Platform: ${platform.getPlatformName()}, Found ${posts.length} posts`
-  );
+    const posts = platform.findPosts();
+    Logger.debug(`📊 Found ${posts.length} posts to process`);
 
-  // Add a small delay to ensure DOM is fully rendered
-  setTimeout(() => {
-    console.log("🔍 Processing posts after delay...");
     processPosts(posts, platform);
-  }, 500);
+  } catch (error) {
+    ErrorHandler.handle(error, "injectButtonWithPlatformManager");
+  }
 }
 
-function processPosts(posts, platform) {
-  // Clear any existing buttons first to start fresh
-  const existingButtons = document.querySelectorAll(
-    ".vibe-btn, .farcaster-btn"
-  );
-  if (existingButtons.length > 0) {
-    console.log(
-      `🧹 Clearing ${existingButtons.length} existing buttons to start fresh`
-    );
-    existingButtons.forEach((btn) => btn.remove());
+// Process posts with retry mechanism
+function processPostsWithRetry() {
+  let retryCount = 0;
+  const maxRetries = 3;
+  const retryDelay = 2000;
+
+  function attemptProcessing() {
+    try {
+      injectButtonUnderPost();
+    } catch (error) {
+      retryCount++;
+      Logger.error(`Processing attempt ${retryCount} failed:`, error);
+
+      if (retryCount < maxRetries) {
+        Logger.info(`Retrying in ${retryDelay}ms...`);
+        setTimeout(attemptProcessing, retryDelay);
+      } else {
+        ErrorHandler.handle(error, "processPostsWithRetry");
+      }
+    }
   }
 
-  let processedCount = 0;
-  let skippedCount = 0;
+  attemptProcessing();
+}
+
+// Process individual posts
+function processPosts(posts, platform) {
+  Logger.debug(`🔍 Processing ${posts.length} posts...`);
 
   posts.forEach((post, index) => {
-    console.log(`🔍 Processing post ${index}:`, {
-      element: post,
-      classes: post.className,
-      hasEngagement: !!post.querySelector(
-        ".mr-4.mt-3.flex.flex-row.items-center"
-      ),
-      hasExistingButton: !!post.querySelector(".vibe-btn, .farcaster-btn"),
-      textContent: post.textContent?.slice(0, 100) + "...",
-    });
+    try {
+      Logger.debug(`🔍 Processing post ${index}:`, {
+        hasButton: !!post.querySelector(".vibe-btn"),
+        postText: post.innerText?.slice(0, 100) + "...",
+      });
 
-    // Check for any existing vibe buttons (including farcaster-btn class)
-    if (post.querySelector(".vibe-btn, .farcaster-btn")) {
-      console.log(`⏭️ Post ${index}: Button already exists, skipping`);
-      skippedCount++;
-      return;
-    }
+      // Skip if button already exists
+      if (post.querySelector(".vibe-btn")) {
+        Logger.debug(`⏭️ Post ${index}: Button already exists, skipping`);
+        return;
+      }
 
-    const actionButton = platform.findActionButton(post);
-    if (!actionButton) {
-      console.log(`❌ Post ${index}: No action button found`);
-      return;
-    }
+      // Find action button
+      const actionButton = platform.findActionButton(post);
+      if (!actionButton) {
+        Logger.debug(`❌ Post ${index}: No action button found`);
+        return;
+      }
 
-    const btn = platform.createActionButton(platform.getPlatformName());
-    if (!btn) {
-      console.log(`❌ Post ${index}: Failed to create button`);
-      return;
-    }
+      // Create and inject button
+      const btn = platform.createActionButton();
+      if (!btn) {
+        Logger.debug(`❌ Post ${index}: Failed to create button`);
+        return;
+      }
 
-    console.log(`✅ Post ${index}: Created button:`, btn);
-    console.log(`🎯 Button text: "${btn.innerText}"`);
+      Logger.debug(`✅ Post ${index}: Created button:`, btn);
+      Logger.debug(`🎯 Button text: "${btn.innerText}"`);
 
-    btn.addEventListener("click", async (e) => {
-      console.log(`🎯 Button clicked for post ${index}`);
-      e.stopPropagation();
-      e.preventDefault();
-      aiService.setActivePost(post);
-      await handleButtonClick(post, platform);
-    });
+      // Add click handler
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        Logger.debug(`🎯 Button clicked for post ${index}`);
+        handleButtonClick(post, platform);
+      });
 
-    console.log(`🔍 Attempting to inject button for post ${index}...`);
-    const success = platform.injectButton(post, btn);
-    console.log(
-      `📌 Post ${index}: Button injection ${success ? "successful" : "failed"}`
-    );
+      // Inject button
+      Logger.debug(`🔍 Attempting to inject button for post ${index}...`);
+      const injectionResult = platform.injectButton(post, btn);
 
-    if (success) {
-      processedCount++;
-    } else {
-      console.log(`❌ Post ${index}: Injection failed, post structure:`, post);
+      if (!injectionResult) {
+        Logger.debug(
+          `❌ Post ${index}: Injection failed, post structure:`,
+          post
+        );
+        Logger.debug(`📊 Post classes:`, post.className);
+        Logger.debug(`📊 Post children:`, post.children.length);
+      }
+    } catch (error) {
+      Logger.error(`Error processing post ${index}:`, error);
     }
   });
-
-  console.log(
-    `📊 Summary: Processed ${processedCount} posts, skipped ${skippedCount} posts`
-  );
 }
 
 function injectButtonWithLegacyLogic() {
@@ -238,28 +358,19 @@ function injectButtonWithLegacyLogic() {
   });
 }
 
-// Handle button click
+// Handle button click with improved error handling
 async function handleButtonClick(post, platform = null) {
-  // Retry mechanism for extension context issues
-  let retryCount = 0;
   const maxRetries = 3;
+  let retryCount = 0;
 
   while (retryCount < maxRetries) {
     try {
-      // Check if Chrome extension APIs are available
+      // Validate extension context
       if (!isExtensionContextValid()) {
-        retryCount++;
-        if (retryCount >= maxRetries) {
-          alert(
-            "Extension context invalid. Please refresh the page and try again."
-          );
-          return;
-        }
-        // Wait a bit before retrying
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        continue;
+        throw new Error("Extension context is invalid");
       }
 
+      // Get storage data with proper error handling
       const result = await new Promise((resolve, reject) => {
         chrome.storage.local.get(
           ["vibeOpenAIKey", "vibeTone", "vibeEmoji", "lastSelectedTone"],
@@ -274,17 +385,16 @@ async function handleButtonClick(post, platform = null) {
       });
 
       const apiKey = result.vibeOpenAIKey;
-      // Use last selected tone, fallback to stored tone, then default to "Agreement with Value"
       const tone =
         result.lastSelectedTone || result.vibeTone || "Agreement with Value";
 
-      console.log("🎯 Tone selection:", {
+      Logger.debug("🎯 Tone selection:", {
         lastSelectedTone: result.lastSelectedTone,
         vibeTone: result.vibeTone,
         finalTone: tone,
       });
 
-      // Complete emoji map to ensure we always have an emoji
+      // Complete emoji map
       const emojiMap = {
         "Smart Contrarian": "🤔",
         "Agreement with Value": "✅",
@@ -304,11 +414,14 @@ async function handleButtonClick(post, platform = null) {
       const emoji = result.vibeEmoji || emojiMap[tone] || "💬";
 
       if (!apiKey || apiKey.trim() === "") {
-        alert("⚠️ Please set your OpenAI API key in the extension settings.");
+        ErrorHandler.showNotification(
+          "⚠️ Please set your OpenAI API key in the extension settings.",
+          "warning"
+        );
         return;
       }
 
-      // Use platform-specific text extraction if available
+      // Extract post text
       let postText;
       if (platform) {
         postText = platform.extractPostText(post);
@@ -316,22 +429,26 @@ async function handleButtonClick(post, platform = null) {
         postText = post.innerText.slice(0, 800);
       }
 
+      // Clear previous post tags
       document.querySelectorAll("[data-vibe-post]").forEach((el) => {
         el.removeAttribute("data-vibe-post");
       });
 
-      // Tag only the current post
+      // Tag current post
       post.setAttribute("data-vibe-post", postText);
 
       await fetchSuggestions(apiKey, tone, emoji, postText, post);
-      break; // Success, exit the retry loop
+      break; // Success, exit retry loop
     } catch (error) {
       retryCount++;
+      Logger.error(`Button click attempt ${retryCount} failed:`, error);
+
       if (retryCount >= maxRetries) {
-        alert("Extension error. Please refresh the page and try again.");
+        ErrorHandler.handle(error, "handleButtonClick");
         return;
       }
-      // Wait a bit before retrying
+
+      // Wait before retrying
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   }
@@ -371,7 +488,7 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
     }
   } catch (error) {
     console.error("❌ Failed to fetch suggestions:", error);
-    alert(`❌ Error: ${error.message}`);
+    ErrorHandler.showNotification(`❌ Error: ${error.message}`, "error");
 
     // Hide modal on error
     modalManager.hide();
@@ -435,14 +552,20 @@ async function handleToneChange(newTone) {
     const emoji = result.vibeEmoji || emojiMap[newTone] || "💬";
 
     if (!apiKey) {
-      alert("⚠️ Please set your OpenAI API key in the extension settings.");
+      ErrorHandler.showNotification(
+        "⚠️ Please set your OpenAI API key in the extension settings.",
+        "warning"
+      );
       return;
     }
 
     // Get the current post text
     const activePost = aiService.activePostElement;
     if (!activePost) {
-      alert("❌ No active post found. Please try again.");
+      ErrorHandler.showNotification(
+        "❌ No active post found. Please try again.",
+        "error"
+      );
       return;
     }
 
@@ -458,7 +581,10 @@ async function handleToneChange(newTone) {
     await fetchSuggestions(apiKey, newTone, emoji, postText, activePost);
   } catch (error) {
     console.error("❌ Failed to change tone:", error);
-    alert(`❌ Error changing tone: ${error.message}`);
+    ErrorHandler.showNotification(
+      `❌ Error changing tone: ${error.message}`,
+      "error"
+    );
   }
 }
 
@@ -484,8 +610,11 @@ async function handleCommentImprovement(commentText) {
       throw new Error("Failed to improve comment");
     }
   } catch (error) {
-    console.error("❌ Failed to improve comment:", error);
-    alert(`❌ Error improving comment: ${error.message}`);
+    Logger.error("❌ Failed to improve comment:", error);
+    ErrorHandler.showNotification(
+      `❌ Error improving comment: ${error.message}`,
+      "error"
+    );
   } finally {
     // Hide the improve loader when done (success or error)
     modalManager.hideImproveLoader();
@@ -497,11 +626,11 @@ initializeServices().then((success) => {
   if (success) {
     console.log("✅ Services initialized successfully");
     // Start the button injection interval
-    setInterval(injectButtonUnderPost, 2000);
+    setInterval(processPostsWithRetry, 2000);
   } else {
     console.log("⚠️ Using legacy button injection");
     // Fall back to legacy injection
-    setInterval(injectButtonUnderPost, 2000);
+    setInterval(processPostsWithRetry, 2000);
   }
 });
 

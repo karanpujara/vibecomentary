@@ -2,7 +2,7 @@
 
 ## 📋 Project Overview
 
-**Be Visible** is a Chrome extension that generates AI-powered comments and DM suggestions for social media platforms. This log documents the development journey, feature implementations, bug fixes, and architectural decisions.
+**Be Visible** is a Chrome extension that generates AI-powered comments, DM suggestions, and creates posts for social media platforms. This log documents the development journey, feature implementations, bug fixes, and architectural decisions.
 
 ## 🏗️ Core Architecture
 
@@ -43,8 +43,14 @@ be-visible/
 ├── settings.js                   # Settings page functionality
 ├── create.html                   # Post creation page interface
 ├── create.js                     # Post creation functionality
+├── general-settings.html         # General settings page interface
+├── general-settings.js           # General settings functionality
+├── welcome.html                  # Welcome page
+├── welcome.js                    # Welcome page functionality
+├── guide.html                    # User guide page
 ├── modal.css                     # Modal-specific styles
-└── icon.png                      # Extension icon
+├── icon.png                      # Extension icon
+└── icon.svg                      # Extension icon source
 ```
 
 ### Platform-Specific Files
@@ -88,7 +94,7 @@ be-visible/
 
 ## 📝 Development History
 
-### Version 1.2 - Post Creation Feature & Enhanced UX (Latest)
+### Version 1.0 - Complete Feature Set & Platform Support (Current)
 
 #### 🚀 Post Creation Feature Implementation
 
@@ -172,9 +178,7 @@ be-visible/
 - **User Feedback**: Visual confirmation for copy operations
 - **Responsive Design**: Mobile-friendly interface with proper scaling
 
-### Version 1.1 - Major UI/UX Improvements & Branding Update
-
-#### 🎨 Branding & Visual Updates (Latest)
+#### 🎨 Branding & Visual Updates
 
 **Extension Rename**
 
@@ -338,21 +342,31 @@ be-visible/
 - **Modal Rendering**: Improved rendering performance
 - **CSS Injection**: Better style management and cleanup
 
-### Version 1.0 - Farcaster Support Added
+#### 🌐 Multi-Platform Support
 
-#### New Platform Implementation
+**LinkedIn Integration**
 
-- **File Created**: `platforms/farcaster.js`
-- **Features**: Post detection, author extraction, button injection
-- **Styling**: Purple theme matching Farcaster's design
-- **Integration**: Added to platform manager and CSS manager
+- **Post Detection**: Uses LinkedIn-specific selectors
+- **Button Injection**: Injects next to LinkedIn comment buttons
+- **Text Extraction**: Handles LinkedIn's post structure
+- **Name Extraction**: Extracts names from LinkedIn's author elements
+- **Styling**: LinkedIn-specific button and modal styling
 
-#### Platform-Specific Features
+**X (Twitter) Integration**
 
-- **Post Detection**: Cast identification and text extraction
-- **Author Extraction**: Username extraction from Farcaster interface
-- **Button Injection**: Integration with Farcaster's action buttons
-- **Character Limits**: 320 characters for Farcaster comments
+- **Post Detection**: Uses X-specific selectors
+- **Button Injection**: Injects next to X reply buttons
+- **Text Extraction**: Handles X's tweet structure
+- **Name Extraction**: Extracts names from X's user elements
+- **Styling**: X-specific button and modal styling
+
+**Farcaster Integration**
+
+- **Post Detection**: Uses Farcaster-specific selectors for casts
+- **Button Injection**: Injects next to Farcaster reply buttons
+- **Text Extraction**: Handles Farcaster's cast structure
+- **Name Extraction**: Extracts names from Farcaster's user elements
+- **Styling**: Farcaster-specific button and modal styling with purple theme
 
 ## 🐛 Bug Fixes & Issues Resolved
 
@@ -432,7 +446,7 @@ be-visible/
 ### Planned Features
 
 - **Additional Platforms**: Support for Instagram, Facebook, Reddit
-- **Advanced AI Models**: Support for GPT-4, Claude, and other models
+- **Advanced AI Models**: Support for Claude, Gemini, and other models
 - **Analytics Dashboard**: Usage statistics and performance metrics
 - **Team Collaboration**: Shared tone libraries and team settings
 
@@ -469,5 +483,5 @@ be-visible/
 ---
 
 **Last Updated**: December 2024
-**Version**: 1.1
-**Status**: Active Development
+**Version**: 1.0
+**Status**: Complete Feature Set

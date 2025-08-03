@@ -56,6 +56,31 @@
         background-color: gray;
         color: white;
       }
+
+      .bottom-buttons {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        margin-top: 10px;
+      }
+
+      .bottom-buttons button {
+        flex: 1;
+        background-color: #6b7280;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        transition: background-color 0.3s ease;
+        margin-top: 0;
+      }
+
+      .bottom-buttons button:hover {
+        background-color: #4b5563;
+      }
     </style>
   </head>
   <body>
@@ -91,8 +116,11 @@
     </div>
 
     <button id="openCreate">📝 Create Post</button>
-    <button id="openSettings">⚙️ Open Settings</button>
-    <button id="openGuide">📘 Open Guide</button>
+    <button id="openSettings">⚙️ Comment Prompts</button>
+    <div class="bottom-buttons">
+      <button id="openSettingsPage">⚙️ Settings</button>
+      <button id="openGuide">📘 Guide</button>
+    </div>
 
     <script src="popup.js"></script>
   </body>

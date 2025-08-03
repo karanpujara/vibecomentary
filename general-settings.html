@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Be Visible - General Settings</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #f5f7fa;
+        color: #333;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+      }
+
+      .header p {
+        margin: 10px 0 0 0;
+        opacity: 0.9;
+        font-size: 16px;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      /* Form Styles */
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #495057;
+        font-size: 14px;
+      }
+
+      .form-group input,
+      .form-group textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s ease;
+        box-sizing: border-box;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      .btn-primary {
+        background-color: rgb(139, 92, 246);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: rgb(124, 58, 237);
+      }
+
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background-color: #218838;
+      }
+
+      .section {
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      .section h2 {
+        margin: 0 0 10px 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .section p {
+        margin: 0 0 20px 0;
+        color: #6c757d;
+        font-size: 14px;
+      }
+
+      .back-button {
+        display: inline-block;
+        margin-bottom: 20px;
+        padding: 8px 16px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+      }
+
+      .back-button:hover {
+        background-color: #5a6268;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>⚙️ General Settings</h1>
+        <p>Configure your Be Visible extension settings</p>
+      </div>
+
+      <div class="content">
+        <a href="settings.html" class="back-button"
+          >← Back to Comment Prompts</a
+        >
+
+        <!-- API Configuration Section -->
+        <div class="section">
+          <h2>🔑 API Configuration</h2>
+          <p>
+            Set up your OpenAI API key to enable AI-powered comment suggestions.
+          </p>
+
+          <div class="form-group">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input
+              type="password"
+              id="apiKey"
+              placeholder="Enter your OpenAI API key"
+              style="
+                width: 250px !important;
+                max-width: 250px !important;
+                display: inline-block;
+              "
+            />
+          </div>
+
+          <div class="form-group">
+            <button id="saveKeyBtn" class="btn btn-primary">
+              Save API Key
+            </button>
+            <button id="clearKeyBtn" class="btn btn-secondary">
+              Clear API Key
+            </button>
+          </div>
+        </div>
+
+        <!-- Export Settings Section -->
+        <div class="section">
+          <h2>📤 Export Settings</h2>
+          <p>
+            Download your current settings and custom tones as a backup file.
+          </p>
+          <button id="exportBtn" class="btn btn-success">Export</button>
+        </div>
+
+        <!-- Import Settings Section -->
+        <div class="section">
+          <h2>📥 Import Settings</h2>
+          <p>Select a JSON file to restore your settings and custom tones.</p>
+          <input
+            type="file"
+            id="importFile"
+            accept=".json"
+            style="
+              margin-bottom: 12px;
+              padding: 8px;
+              border: 1px solid #ced4da;
+              border-radius: 6px;
+              background: #f8f9fa;
+              font-size: 14px;
+              width: 250px !important;
+              max-width: 250px !important;
+              box-sizing: border-box;
+              display: inline-block;
+            "
+          />
+          <br />
+          <button id="importBtn" class="btn btn-secondary">Import</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="general-settings.js"></script>
+  </body>
+</html>

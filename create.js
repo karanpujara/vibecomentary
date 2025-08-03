@@ -31,6 +31,58 @@ const defaultPostToneEmojis = {
   Insight: "💡",
 };
 
+// Default template
+const defaultTemplate = {
+  name: "Key points - One liners",
+  sampleFormat: `In the AI era, distribution is the difference between innovation and obscurity.
+
+Businesses are harnessing AI, but the real challenge lies in distribution strategies. Here's why it matters 👇
+
+AI can create groundbreaking products, but without strategic distribution, they're just ideas.
+
+Distribution channels need to be agile, responsive, and tech-savvy.
+
+I've engaged with numerous industry leaders.
+
+They're not just developing AI solutions. They're redefining how these solutions reach consumers.
+
+Distribution is now a blend of technology and strategy.
+
+Traditionally strong channels are evolving.
+
+AI-driven analytics are transforming supply chains, optimizing delivery routes, and predicting market demands.
+
+Yet, many organizations overlook distribution in their AI strategies.
+
+A product that can't reach its audience is a missed opportunity.
+
+And as AI continues to advance, so does the complexity of distribution networks.
+
+This isn't just logistics.
+
+It's about ensuring that innovative products find the right market at the right time.
+
+AI's impact on distribution also means jobs are changing.
+
+Roles are shifting towards data-driven decision-making.
+
+Skills in AI and distribution are becoming intertwined.
+
+The future workforce needs to adapt.
+
+Start investing in distribution strategy now.
+
+Train your teams to understand and leverage AI in distribution.
+
+This is how you stay competitive.
+
+Leaders, it's time to act.
+
+Invest in AI-informed distribution strategies.
+
+They're not just a nice to have; they're essential.`,
+};
+
 // Platform-specific length configurations
 const platformLengthConfigs = {
   linkedin: {
@@ -59,26 +111,89 @@ class CreatePostManager {
       x: 280,
       farcaster: 320,
     };
+    this.editingTemplateName = null; // Track which template is being edited
     this.init();
   }
 
   init() {
     this.setupEventListeners();
     this.loadUserProfile();
+    this.updateToneDropdown();
+    this.updateWritingStyleDropdown();
+    this.initTemplates();
 
-    // Initialize post tone setup if we're on the tone-setup panel
-    if (
-      document.getElementById("tone-setup-panel").classList.contains("active")
-    ) {
-      this.initPostToneSetup();
-    }
+    // Initialize submenu states
+    this.initSubmenuStates();
+
+    // Initialize other components
+    this.updateLengthInfo();
+    this.initPostToneSetup();
+
+    // Check if a template is already selected and display it
+    setTimeout(() => {
+      const selectedTemplate = document.getElementById("writingStyle")?.value;
+      if (selectedTemplate) {
+        console.log("Template already selected on init:", selectedTemplate);
+        this.handleTemplateSelection();
+      }
+    }, 500);
   }
 
   setupEventListeners() {
     // Navbar navigation
     document.querySelectorAll(".nav-item").forEach((item) => {
       item.addEventListener("click", (e) => {
+        // Don't trigger navigation if clicking the toggle icon
+        if (e.target.classList.contains("nav-toggle")) {
+          return;
+        }
         this.switchPanel(e.currentTarget.dataset.panel);
+      });
+    });
+
+    // Toggle icon clicks for submenu visibility
+    document.querySelectorAll(".nav-toggle").forEach((toggle) => {
+      toggle.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent triggering nav-item click
+
+        const navItem = toggle.closest(".nav-item");
+        const submenu = navItem.nextElementSibling;
+
+        if (submenu && submenu.classList.contains("nav-submenu")) {
+          const isCollapsed = submenu.classList.contains("collapsed");
+
+          if (isCollapsed) {
+            // Expand submenu
+            submenu.classList.remove("collapsed");
+            toggle.textContent = "➖";
+            toggle.classList.add("expanded");
+          } else {
+            // Collapse submenu
+            submenu.classList.add("collapsed");
+            toggle.textContent = "➕";
+            toggle.classList.remove("expanded");
+          }
+        }
+      });
+    });
+
+    // Submenu navigation
+    document.querySelectorAll(".nav-submenu-item").forEach((item) => {
+      item.addEventListener("click", (e) => {
+        const panel = e.currentTarget.dataset.panel;
+        const postTab = e.currentTarget.dataset.postTab;
+        const templateTab = e.currentTarget.dataset.templateTab;
+
+        console.log("Submenu clicked:", { panel, postTab, templateTab });
+        console.log("Current target:", e.currentTarget);
+
+        // Add active state to the clicked submenu item
+        document.querySelectorAll(".nav-submenu-item").forEach((subItem) => {
+          subItem.classList.remove("active");
+        });
+        e.currentTarget.classList.add("active");
+
+        this.switchPanel(panel, postTab, templateTab);
       });
     });
 
@@ -131,29 +246,73 @@ class CreatePostManager {
     if (lengthSelect) {
       lengthSelect.addEventListener("change", () => {
         this.updateLengthInfo();
+        // Update character count when length changes
+        this.updateCharacterCount();
       });
     }
 
     // Initialize length info
     this.updateLengthInfo();
+
+    // Templates form event listeners
+    this.setupTemplateEventListeners();
   }
 
-  switchPanel(panelName) {
-    // Update navbar active state
-    document.querySelectorAll(".nav-item").forEach((item) => {
-      item.classList.remove("active");
-    });
-    document
-      .querySelector(`[data-panel="${panelName}"]`)
-      .classList.add("active");
-
+  switchPanel(panelName, postTab = null, templateTab = null) {
     // Hide all panels
     document.querySelectorAll(".content-panel").forEach((panel) => {
       panel.classList.remove("active");
     });
 
+    // Remove active state from all nav items and submenu items
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      item.classList.remove("active");
+    });
+    document.querySelectorAll(".nav-submenu-item").forEach((item) => {
+      item.classList.remove("active");
+    });
+
+    // Add active state to the selected nav item
+    const selectedNavItem = document.querySelector(
+      `[data-panel="${panelName}"]`
+    );
+    if (selectedNavItem) {
+      selectedNavItem.classList.add("active");
+    }
+
     // Show selected panel
     document.getElementById(`${panelName}-panel`).classList.add("active");
+
+    // If switching to tone-setup panel
+    if (panelName === "tone-setup") {
+      // Initialize post tone setup if not already done
+      this.initPostToneSetup();
+
+      // If a specific tab is requested, switch to it
+      if (postTab) {
+        // Immediate switch for better responsiveness
+        console.log("Switching to post tab from submenu:", postTab);
+        this.switchPostTab(postTab);
+      } else {
+        // Default to first tab if no specific tab requested
+        console.log("Defaulting to first post tab");
+        this.switchPostTab("post-tones");
+      }
+    }
+
+    // If switching to templates panel
+    if (panelName === "templates") {
+      // Initialize templates if not already done
+      this.initTemplates();
+
+      // If a specific tab is requested, switch to it
+      if (templateTab) {
+        this.switchTemplateTab(templateTab);
+      } else {
+        // Default to first tab if no specific tab requested
+        this.switchTemplateTab("writing-styles");
+      }
+    }
   }
 
   selectPlatform(platform) {
@@ -207,13 +366,26 @@ class CreatePostManager {
         toneSelect.appendChild(option);
       });
 
-      // Add custom post tones
+      // Track existing values to prevent duplicates
+      const existingValues = new Set();
+      Array.from(toneSelect.options).forEach((option) => {
+        existingValues.add(option.value);
+      });
+
+      // Add custom post tones (avoiding duplicates)
       Object.keys(customPostTones).forEach((toneName) => {
+        // Skip if this tone name already exists
+        if (existingValues.has(toneName)) {
+          console.log("Skipping duplicate tone:", toneName);
+          return;
+        }
+
         const customTone = customPostTones[toneName];
         const option = document.createElement("option");
         option.value = toneName;
         option.textContent = `${customTone.emoji} ${toneName}`;
         toneSelect.appendChild(option);
+        existingValues.add(toneName); // Add to set to prevent future duplicates
       });
     });
   }
@@ -233,7 +405,7 @@ class CreatePostManager {
 
       lengthInfo.textContent = `${
         selectedLength.charAt(0).toUpperCase() + selectedLength.slice(1)
-      }: ~${config.target} characters (${platformName})`;
+      }: ~${config.max} characters (${platformName})`;
     }
   }
 
@@ -250,11 +422,21 @@ class CreatePostManager {
   async generatePost() {
     const topic = document.getElementById("topic").value.trim();
     const tone = document.getElementById("tone").value;
+    const selectedTemplate = document.getElementById("writingStyle").value;
 
-    if (!topic || !tone) {
-      alert("Please fill in both topic and tone fields.");
+    if (!topic || !tone || !selectedTemplate) {
+      this.showNotification(
+        "Please fill in topic, tone, and select a template.",
+        "error"
+      );
       return;
     }
+
+    console.log("Starting post generation with:", {
+      topic,
+      tone,
+      selectedTemplate,
+    });
 
     // Show loading state
     this.showLoading(true);
@@ -262,10 +444,21 @@ class CreatePostManager {
 
     try {
       // Get API key and selected model
-      const result = await chrome.storage.local.get(["vibeOpenAIKey"]);
+      const result = await chrome.storage.local.get([
+        "vibeOpenAIKey",
+        "templates",
+      ]);
       const apiKey = result.vibeOpenAIKey;
+      const templates = result.templates || {};
       const model =
         document.getElementById("modelSelect").value || "gpt-3.5-turbo";
+
+      console.log("Retrieved data:", {
+        hasApiKey: !!apiKey,
+        apiKeyStartsWith: apiKey?.substring(0, 5),
+        templateCount: Object.keys(templates).length,
+        model,
+      });
 
       if (!apiKey || !apiKey.startsWith("sk-")) {
         throw new Error(
@@ -273,68 +466,130 @@ class CreatePostManager {
         );
       }
 
-      // Generate post
-      const post = await this.createPostWithAI(apiKey, topic, tone, model);
+      // Get the selected template
+      const template = templates[selectedTemplate];
+      if (!template) {
+        throw new Error("Selected template not found.");
+      }
+
+      console.log("Template found:", selectedTemplate);
+
+      // Generate post using the topic content and template format
+      const post = await this.createPostWithTemplate(
+        apiKey,
+        topic,
+        tone,
+        template,
+        model
+      );
+
+      console.log("Post generated successfully, displaying...");
 
       // Display result
-      this.displayGeneratedPost(post);
+      this.displayGeneratedPost(post, selectedTemplate);
     } catch (error) {
       console.error("Error generating post:", error);
-      alert(`Error generating post: ${error.message}`);
+      this.showNotification(`Error generating post: ${error.message}`, "error");
     } finally {
+      console.log("Finishing post generation, hiding loading...");
       this.showLoading(false);
     }
   }
 
-  async createPostWithAI(apiKey, topic, tone, model) {
-    const platformName = this.getPlatformDisplayName();
-    const lengthConfig = this.getLengthConfig();
+  async createPostWithTemplate(apiKey, topic, tone, template, model) {
+    try {
+      const platformName = this.getPlatformDisplayName();
+      const lengthConfig = this.getLengthConfig();
+      const characterLimit = lengthConfig.max; // Define characterLimit here
 
-    const prompt = await this.buildPostPrompt(
-      topic,
-      tone,
-      platformName,
-      lengthConfig.max
-    );
+      console.log("Creating post with template:", {
+        platformName,
+        characterLimit,
+        model,
+        topic: topic.substring(0, 50) + "...",
+      });
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: model,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are an expert social media content creator. Create engaging, platform-appropriate posts that are authentic and valuable to the audience.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        max_tokens: 500,
-        temperature: 0.7,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(
-        `OpenAI API Error: ${error.error?.message || "Unknown error"}`
+      const prompt = await this.buildPostPrompt(
+        topic,
+        tone,
+        template.sampleFormat, // Use the sample format as the writing style
+        platformName,
+        characterLimit
       );
+
+      console.log("Prompt built, making API call...");
+
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an expert social media content creator. Create engaging, platform-appropriate posts that are authentic and valuable to the audience. ALWAYS respect character limits strictly.",
+              },
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+            max_tokens: Math.min(500, Math.floor(characterLimit * 0.4)), // Limit tokens to help enforce character limit
+            temperature: 0.7,
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      console.log("API response received:", response.status);
+
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("API Error:", error);
+        throw new Error(
+          `OpenAI API Error: ${error.error?.message || "Unknown error"}`
+        );
+      }
+
+      const data = await response.json();
+      console.log("API data received:", data);
+
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        throw new Error("Invalid response format from OpenAI API");
+      }
+
+      const generatedPost = data.choices[0].message.content.trim();
+      console.log("Post generated successfully, length:", generatedPost.length);
+
+      return this.cleanPostContent(generatedPost);
+    } catch (error) {
+      console.error("Error in createPostWithTemplate:", error);
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    const generatedPost = data.choices[0].message.content.trim();
-
-    return this.cleanPostContent(generatedPost);
   }
 
-  async buildPostPrompt(topic, tone, platformName, characterLimit) {
+  async buildPostPrompt(
+    topic,
+    tone,
+    templateFormat,
+    platformName,
+    characterLimit
+  ) {
     // Get stored post tone data
     const result = await chrome.storage.local.get([
       "postTonePrompts",
@@ -367,23 +622,39 @@ class CreatePostManager {
     const lengthSelect = document.getElementById("lengthSelect");
     const selectedLength = lengthSelect ? lengthSelect.value : "medium";
 
-    return `Create a ${selectedLength} post for ${platformName} about: "${topic}"
+    // Determine hashtag strategy based on platform and tone
+    const hashtagStrategy = this.getHashtagStrategy(platformName, tone);
 
-Prompt: ${prompt}
+    return `Create a ${selectedLength} post for ${platformName} about "${topic}".
 
-Guidelines: ${guideline}
+CRITICAL: You are writing about "${topic}". The template below is ONLY to show you the desired FORMAT (short lines, line breaks, etc.). DO NOT copy ANY words, phrases, or ideas from it.
 
-Platform-specific requirements:
+TEMPLATE FORMAT REFERENCE (for structure only):
+${templateFormat}
+
+REQUIREMENTS:
+- Topic: "${topic}"
+- Tone: ${tone}
 - Platform: ${platformName}
-- Length: ${selectedLength} (target: ${lengthConfig.target} characters, max: ${
-      lengthConfig.max
-    } characters)
-- Style: ${this.getPlatformStyle()}
-- Include relevant hashtags if appropriate
-- Make it engaging and authentic
-- Keep the post within ${lengthConfig.max} characters
+- Length: ${characterLimit} characters maximum
+- Format: Use short lines and line breaks like the template
+- Content: Write COMPLETELY ORIGINAL content about "${topic}"
 
-Post content:`;
+TONE GUIDELINES:
+- ${prompt}
+- ${guideline}
+
+PLATFORM STYLE: ${this.getPlatformStyle()}
+HASHTAGS: ${hashtagStrategy}
+
+INSTRUCTIONS:
+1. Write about "${topic}" using your own ideas and insights
+2. Use short lines and line breaks for readability
+3. Do not copy any words, phrases, or concepts from the template
+4. Create fresh, engaging content about "${topic}"
+5. Stay within ${characterLimit} characters
+
+Generate your post about "${topic}":`;
   }
 
   getToneInstructions(tone) {
@@ -427,6 +698,48 @@ Post content:`;
     return names[this.selectedPlatform] || "social media";
   }
 
+  getHashtagStrategy(platformName, tone) {
+    // Platform-specific hashtag strategies
+    const platformStrategies = {
+      "X (Twitter)": {
+        default: "Use 1-2 relevant hashtags only if they add value to the post",
+        Professional: "Avoid hashtags unless discussing industry trends",
+        Casual: "Use 1-2 casual hashtags if natural",
+        Educational: "Use 1-2 educational hashtags if relevant",
+        Storytelling: "Avoid hashtags to keep story authentic",
+        Question: "Avoid hashtags to encourage natural discussion",
+        Announcement:
+          "Use 1-2 relevant hashtags if announcing something specific",
+        Insight: "Avoid hashtags to keep focus on the insight",
+      },
+      LinkedIn: {
+        default:
+          "Use 2-3 professional hashtags only if discussing industry topics",
+        Professional: "Use 2-3 industry-relevant hashtags",
+        Casual: "Avoid hashtags to keep it personal",
+        Educational: "Use 2-3 educational hashtags if teaching something",
+        Storytelling: "Avoid hashtags to keep story authentic",
+        Question: "Avoid hashtags to encourage natural discussion",
+        Announcement: "Use 2-3 relevant hashtags for announcements",
+        Insight: "Use 1-2 hashtags if sharing industry insights",
+      },
+      Farcaster: {
+        default: "Avoid hashtags to keep it community-focused",
+        Professional: "Avoid hashtags",
+        Casual: "Avoid hashtags",
+        Educational: "Avoid hashtags",
+        Storytelling: "Avoid hashtags",
+        Question: "Avoid hashtags",
+        Announcement: "Avoid hashtags",
+        Insight: "Avoid hashtags",
+      },
+    };
+
+    const platformStrategy =
+      platformStrategies[platformName] || platformStrategies["X (Twitter)"];
+    return platformStrategy[tone] || platformStrategy.default;
+  }
+
   cleanPostContent(content) {
     // Remove any AI-generated prefixes or labels
     return content
@@ -435,17 +748,69 @@ Post content:`;
       .trim();
   }
 
-  displayGeneratedPost(post) {
+  displayGeneratedPost(post, templateName = null) {
     document.getElementById("postContent").value = post;
     this.updateCharacterCount();
     document.getElementById("generatedPost").style.display = "block";
-    document.getElementById("placeholder").style.display = "none";
+
+    // Hide the placeholder area completely after post generation
+    const placeholder = document.getElementById("placeholder");
+    if (placeholder) {
+      placeholder.style.display = "none";
+    }
+
+    // Remove any existing template indicator
+    const existingIndicator = document.querySelector(".template-indicator");
+    if (existingIndicator) {
+      existingIndicator.remove();
+    }
+
+    // Add template sample directly below the generated post if template was used
+    if (templateName) {
+      // Get the template sample format
+      chrome.storage.local.get(["templates"], (result) => {
+        const templates = result.templates || {};
+        const template = templates[templateName];
+
+        if (template && template.sampleFormat) {
+          // Format the sample format to preserve line breaks and formatting
+          const formattedContent = template.sampleFormat
+            .replace(/\n/g, "<br>")
+            .replace(/\s{2,}/g, "&nbsp;&nbsp;");
+
+          const templateSample = document.createElement("div");
+          templateSample.className = "template-sample";
+          templateSample.innerHTML = `
+            <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;">
+              <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+                📋 Template: ${templateName}
+              </div>
+              <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px;">
+                ${formattedContent}
+              </div>
+            </div>
+          `;
+
+          // Insert after the copy/regenerate buttons
+          const generatedPost = document.getElementById("generatedPost");
+          generatedPost.appendChild(templateSample);
+        }
+      });
+    }
+  }
+
+  restoreTemplateDisplay() {
+    const selectedTemplate = document.getElementById("writingStyle").value;
+    if (selectedTemplate) {
+      this.handleTemplateSelection();
+    }
   }
 
   updateCharacterCount() {
     const postContent = document.getElementById("postContent").value;
     const characterCount = postContent.length;
-    const limit = this.characterLimits[this.selectedPlatform];
+    const lengthConfig = this.getLengthConfig();
+    const limit = lengthConfig.max;
 
     const countElement = document.getElementById("characterCount");
     countElement.textContent = `${characterCount}/${limit} characters`;
@@ -492,8 +857,10 @@ Post content:`;
       loading.style.display = "block";
       loadingAnimation.style.display = "block";
       generateBtn.disabled = true;
-      generateBtn.textContent = "⏳ Generating...";
-      placeholder.style.display = "none";
+      generateBtn.textContent = "⏳ Crafting...";
+      generateBtn.onclick = () => this.stopLoading(); // Allow canceling
+      // Don't hide placeholder - keep template sample visible
+      // placeholder.style.display = "none";
       generatedPost.style.display = "none";
 
       // Force restart animations
@@ -533,8 +900,15 @@ Post content:`;
       loading.style.display = "none";
       loadingAnimation.style.display = "none";
       generateBtn.disabled = false;
-      generateBtn.textContent = "✨ Generate Post";
+      generateBtn.textContent = "✨ Craft Post";
+      generateBtn.onclick = () => this.generatePost(); // Restore normal function
     }
+  }
+
+  stopLoading() {
+    console.log("User canceled generation");
+    this.showLoading(false);
+    this.showNotification("Post generation canceled.", "info");
   }
 
   hideGeneratedPost() {
@@ -602,31 +976,52 @@ Post content:`;
   switchPostTab(tabName) {
     console.log("Switching to post tab:", tabName);
 
-    // Update tab active state
-    document.querySelectorAll(".post-tab").forEach((tab) => {
-      tab.classList.remove("active");
+    // Simple approach: directly target the tabs by their data attributes
+    const tabs = document.querySelectorAll(".post-tab");
+    tabs.forEach((tab) => {
+      const tabData = tab.getAttribute("data-post-tab");
+      if (tabData === tabName) {
+        // This is the active tab
+        tab.classList.add("active");
+        tab.style.backgroundColor = "#667eea";
+        tab.style.color = "#ffffff";
+        tab.style.borderBottom = "3px solid #667eea";
+        tab.style.fontWeight = "bold";
+        console.log("Activated tab:", tabData);
+      } else {
+        // This is not the active tab
+        tab.classList.remove("active");
+        tab.style.backgroundColor = "";
+        tab.style.color = "";
+        tab.style.borderBottom = "";
+        tab.style.fontWeight = "";
+        console.log("Deactivated tab:", tabData);
+      }
     });
-    const activeTab = document.querySelector(`[data-post-tab="${tabName}"]`);
-    if (activeTab) {
-      activeTab.classList.add("active");
-      console.log("Activated tab:", tabName);
-    } else {
-      console.error("Tab not found:", tabName);
-    }
 
-    // Hide all tab contents
-    document.querySelectorAll(".post-tab-content").forEach((content) => {
-      content.classList.remove("active");
+    // Update submenu active state
+    document.querySelectorAll(".nav-submenu-item").forEach((item) => {
+      const itemData = item.getAttribute("data-post-tab");
+      if (itemData === tabName) {
+        item.classList.add("active");
+        console.log("Activated submenu item:", itemData);
+      } else {
+        item.classList.remove("active");
+        console.log("Deactivated submenu item:", itemData);
+      }
     });
 
-    // Show selected tab content
-    const tabContent = document.getElementById(tabName);
-    if (tabContent) {
-      tabContent.classList.add("active");
-      console.log("Activated tab content:", tabName);
-    } else {
-      console.error("Tab content not found:", tabName);
-    }
+    // Hide all tab contents and show the selected one
+    const contents = document.querySelectorAll(".post-tab-content");
+    contents.forEach((content) => {
+      if (content.id === tabName) {
+        content.classList.add("active");
+        console.log("Activated content:", content.id);
+      } else {
+        content.classList.remove("active");
+        console.log("Deactivated content:", content.id);
+      }
+    });
   }
 
   updatePostTonesGrid() {
@@ -736,21 +1131,33 @@ Post content:`;
     const prompt = card.querySelector(".post-tone-prompt").value;
     const guideline = card.querySelector(".post-tone-guideline").value;
 
+    // Check if this is a custom tone or default tone
     chrome.storage.local.get(
-      ["postTonePrompts", "postToneGuidelines"],
+      ["postTonePrompts", "postToneGuidelines", "customPostTones"],
       (result) => {
         const postTonePrompts = result.postTonePrompts || {};
         const postToneGuidelines = result.postToneGuidelines || {};
+        const customPostTones = result.customPostTones || {};
 
-        postTonePrompts[toneName] = prompt;
-        postToneGuidelines[toneName] = guideline;
-
-        chrome.storage.local.set(
-          { postTonePrompts, postToneGuidelines },
-          () => {
-            alert(`✅ Post tone "${toneName}" saved successfully!`);
-          }
-        );
+        // If it's a custom tone, save to customPostTones
+        if (customPostTones[toneName]) {
+          customPostTones[toneName].prompt = prompt;
+          customPostTones[toneName].guideline = guideline;
+          chrome.storage.local.set({ customPostTones }, () => {
+            this.updateAddPostToneCustomTonesGrid();
+            alert(`✅ Custom post tone "${toneName}" saved successfully!`);
+          });
+        } else {
+          // If it's a default tone, save to postTonePrompts/postToneGuidelines
+          postTonePrompts[toneName] = prompt;
+          postToneGuidelines[toneName] = guideline;
+          chrome.storage.local.set(
+            { postTonePrompts, postToneGuidelines },
+            () => {
+              alert(`✅ Post tone "${toneName}" saved successfully!`);
+            }
+          );
+        }
       }
     );
   }
@@ -877,13 +1284,79 @@ Post content:`;
 
       Object.keys(customPostTones).forEach((toneName) => {
         const customTone = customPostTones[toneName];
-        const card = this.createPostToneCard(
-          toneName,
-          customTone.prompt,
-          customTone.guideline,
-          customTone.emoji,
-          "custom"
-        );
+        const card = document.createElement("div");
+        card.className = "post-tone-card";
+        card.innerHTML = `
+          <div class="post-tone-header">
+            <span class="post-tone-emoji">${customTone.emoji}</span>
+            <span class="post-tone-name">${toneName}</span>
+            <span class="post-tone-type custom">Custom</span>
+          </div>
+          <div class="form-group">
+            <label>Prompt:</label>
+            <textarea class="post-tone-prompt" data-tone="${toneName}" rows="3">${customTone.prompt}</textarea>
+          </div>
+          <div class="form-group">
+            <label>Guideline:</label>
+            <textarea class="post-tone-guideline" data-tone="${toneName}" rows="3">${customTone.guideline}</textarea>
+          </div>
+          <div class="post-tone-actions">
+            <button class="btn btn-primary save-post-tone" data-tone="${toneName}">Save</button>
+            <button class="btn btn-danger delete-post-tone" data-tone="${toneName}">Delete</button>
+          </div>
+        `;
+
+        // Event delegation for Save/Delete - same as comment tones
+        card
+          .querySelector(".post-tone-actions")
+          .addEventListener("click", (e) => {
+            if (e.target.tagName !== "BUTTON") return;
+            const action = e.target.classList.contains("save-post-tone")
+              ? "save"
+              : "delete";
+            const tName = e.target.getAttribute("data-tone");
+
+            if (action === "save") {
+              const prompt = card
+                .querySelector(".post-tone-prompt")
+                .value.trim();
+              const guideline = card
+                .querySelector(".post-tone-guideline")
+                .value.trim();
+
+              chrome.storage.local.get(["customPostTones"], (res) => {
+                const cPostTones = res.customPostTones || {};
+                if (cPostTones[tName]) {
+                  cPostTones[tName].prompt = prompt;
+                  cPostTones[tName].guideline = guideline;
+                  chrome.storage.local.set(
+                    { customPostTones: cPostTones },
+                    () => {
+                      this.updateAddPostToneCustomTonesGrid();
+                      this.updatePostTonesGrid();
+                      alert(`✅ ${tName} updated!`);
+                    }
+                  );
+                }
+              });
+            } else if (action === "delete") {
+              if (confirm(`Are you sure you want to delete "${tName}"?`)) {
+                chrome.storage.local.get(["customPostTones"], (res) => {
+                  const cPostTones = res.customPostTones || {};
+                  delete cPostTones[tName];
+                  chrome.storage.local.set(
+                    { customPostTones: cPostTones },
+                    () => {
+                      this.updateAddPostToneCustomTonesGrid();
+                      this.updatePostTonesGrid();
+                      alert(`🗑️ "${tName}" deleted!`);
+                    }
+                  );
+                });
+              }
+            }
+          });
+
         grid.appendChild(card);
       });
     });
@@ -1203,6 +1676,712 @@ Post content:`;
         Nature: "🌱",
       };
       return icons[category] || "😀";
+    }
+  }
+
+  // Templates functionality
+  initTemplates() {
+    this.setupTemplateEventListeners();
+    this.initDefaultTemplates();
+    this.updateTemplatesGrid();
+    this.initTemplateTabSwitching();
+  }
+
+  initDefaultTemplates() {
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+
+      // Check if default template exists, if not add it
+      if (!templates[defaultTemplate.name]) {
+        templates[defaultTemplate.name] = {
+          name: defaultTemplate.name,
+          sampleFormat: defaultTemplate.sampleFormat,
+          createdAt: new Date().toISOString(),
+        };
+
+        chrome.storage.local.set({ templates }, () => {
+          console.log("Default template added successfully");
+        });
+      }
+    });
+  }
+
+  initTemplateTabSwitching() {
+    const tabButtons = document.querySelectorAll("[data-tab]");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const targetTab = button.getAttribute("data-tab");
+        this.switchTemplateTab(targetTab);
+      });
+    });
+  }
+
+  switchTemplateTab(tabName) {
+    // Map submenu tab names to actual tab IDs
+    const tabMapping = {
+      "writing-styles": "template-styles",
+      "create-template": "create-template",
+    };
+
+    const actualTabName = tabMapping[tabName] || tabName;
+
+    const tabButtons = document.querySelectorAll("[data-tab]");
+    const tabContents = document.querySelectorAll(".tab-content");
+
+    // Remove active class from all buttons and contents
+    tabButtons.forEach((btn) => btn.classList.remove("active"));
+    tabContents.forEach((content) => content.classList.remove("active"));
+
+    // Add active class to clicked button and corresponding content
+    const activeButton = document.querySelector(
+      `[data-tab="${actualTabName}"]`
+    );
+    const activeContent = document.getElementById(`${actualTabName}-tab`);
+
+    if (activeButton) {
+      activeButton.classList.add("active");
+    }
+    if (activeContent) {
+      activeContent.classList.add("active");
+    }
+  }
+
+  setupTemplateEventListeners() {
+    // Template creation button
+    const createTemplateBtn = document.getElementById("createTemplateBtn");
+    if (createTemplateBtn) {
+      createTemplateBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.createTemplate();
+      });
+    }
+
+    // Clear template form
+    const clearTemplateBtn = document.getElementById("clearTemplateBtn");
+    if (clearTemplateBtn) {
+      clearTemplateBtn.addEventListener("click", () => {
+        this.clearTemplateForm();
+      });
+    }
+
+    // Sample format character count
+    const sampleFormat = document.getElementById("sampleFormat");
+    if (sampleFormat) {
+      sampleFormat.addEventListener("input", () => {
+        this.updateSampleFormatCount();
+      });
+    }
+  }
+
+  createTemplate() {
+    const name = document.getElementById("templateName").value.trim();
+    const sampleFormat = document.getElementById("sampleFormat").value.trim();
+
+    if (!name || !sampleFormat) {
+      this.showNotification(
+        "Please fill in both template name and sample format fields.",
+        "error"
+      );
+      return;
+    }
+
+    // Validate template name length
+    if (name.length > 50) {
+      this.showNotification(
+        "Template name must be less than 50 characters.",
+        "error"
+      );
+      return;
+    }
+
+    // Validate sample format length
+    if (sampleFormat.length > 3000) {
+      this.showNotification(
+        "Sample format must be less than 3000 characters.",
+        "error"
+      );
+      return;
+    }
+
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+
+      // Check if template name already exists (only for new templates, not when editing)
+      if (templates[name] && this.editingTemplateName !== name) {
+        this.showNotification(
+          `A template with the name "${name}" already exists.`,
+          "error"
+        );
+        return;
+      }
+
+      // Create template object
+      const template = {
+        name: name,
+        sampleFormat: sampleFormat,
+        createdAt: new Date().toISOString(),
+      };
+
+      // If editing, remove the old template name first
+      if (this.editingTemplateName && this.editingTemplateName !== name) {
+        delete templates[this.editingTemplateName];
+      }
+
+      templates[name] = template;
+
+      chrome.storage.local.set({ templates }, () => {
+        this.clearTemplateForm();
+        this.updateTemplatesGrid();
+        this.updateWritingStyleDropdown();
+
+        const action = this.editingTemplateName ? "updated" : "created";
+        this.showNotification(
+          `✅ Template "${name}" ${action} successfully!`,
+          "success"
+        );
+
+        // Reset editing state
+        this.editingTemplateName = null;
+        this.updateCreateButton();
+      });
+    });
+  }
+
+  updateSampleFormatCount() {
+    const textarea = document.getElementById("sampleFormat");
+    const countElement = document.getElementById("sampleFormatCount");
+
+    if (textarea && countElement) {
+      const count = textarea.value.length;
+      const maxLength = 3000;
+
+      countElement.textContent = `${count} characters`;
+
+      if (count > maxLength * 0.9) {
+        countElement.style.color = count > maxLength ? "#dc3545" : "#ffc107";
+      } else {
+        countElement.style.color = "#6c757d";
+      }
+    }
+  }
+
+  clearTemplateForm() {
+    document.getElementById("templateName").value = "";
+    document.getElementById("sampleFormat").value = "";
+    this.updateSampleFormatCount();
+
+    // Reset editing state
+    this.editingTemplateName = null;
+    this.updateCreateButton();
+  }
+
+  updateTemplatesGrid() {
+    const templatesGrid = document.getElementById("templatesGrid");
+    if (!templatesGrid) return;
+
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+      const templateNames = Object.keys(templates);
+
+      if (templateNames.length === 0) {
+        templatesGrid.innerHTML = `
+          <div class="no-templates-message">
+            <h3>📋 No Templates Yet</h3>
+            <p>Create your first template to get started!</p>
+          </div>
+        `;
+      } else {
+        templatesGrid.innerHTML = "";
+        templateNames.forEach((templateName) => {
+          const template = templates[templateName];
+          const card = this.createTemplateCard(templateName, template);
+          templatesGrid.appendChild(card);
+        });
+      }
+    });
+
+    // Also update the Create Template tab grid
+    this.updateCreateTemplateTemplatesGrid();
+  }
+
+  updateCreateTemplateTemplatesGrid() {
+    const createTemplateGrid = document.getElementById(
+      "createTemplateTemplatesGrid"
+    );
+    if (!createTemplateGrid) return;
+
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+      const templateNames = Object.keys(templates);
+
+      // Filter out the default template for the Create Template tab
+      const customTemplateNames = templateNames.filter(
+        (name) => name !== defaultTemplate.name
+      );
+
+      if (customTemplateNames.length === 0) {
+        createTemplateGrid.innerHTML = `
+          <div class="no-templates-message">
+            <h3>📋 No Custom Templates Yet</h3>
+            <p>Create your first custom template to get started!</p>
+          </div>
+        `;
+      } else {
+        createTemplateGrid.innerHTML = "";
+        customTemplateNames.forEach((templateName) => {
+          const template = templates[templateName];
+          const card = this.createTemplateCard(templateName, template);
+          createTemplateGrid.appendChild(card);
+        });
+      }
+    });
+  }
+
+  updateWritingStyleDropdown() {
+    const writingStyleSelect = document.getElementById("writingStyle");
+    if (!writingStyleSelect) return;
+
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+      const templateNames = Object.keys(templates);
+
+      // Clear existing options except the first placeholder
+      writingStyleSelect.innerHTML =
+        '<option value="">Choose a template...</option>';
+
+      // Add template options
+      templateNames.forEach((templateName) => {
+        const option = document.createElement("option");
+        option.value = templateName;
+
+        // Add "(default)" indicator for the default template
+        const isDefault = templateName === defaultTemplate.name;
+        option.textContent = `📋 ${templateName}${
+          isDefault ? " (default)" : ""
+        }`;
+
+        writingStyleSelect.appendChild(option);
+      });
+
+      // Remove existing event listeners and add new one
+      const newSelect = writingStyleSelect.cloneNode(true);
+      writingStyleSelect.parentNode.replaceChild(newSelect, writingStyleSelect);
+
+      // Add change event listener to show template preview
+      newSelect.addEventListener("change", () => {
+        console.log("Template selection changed:", newSelect.value);
+        this.handleTemplateSelection();
+      });
+    });
+  }
+
+  handleTemplateSelection() {
+    const selectedTemplate = document.getElementById("writingStyle").value;
+    const placeholder = document.getElementById("placeholder");
+
+    console.log("=== handleTemplateSelection Debug ===");
+    console.log("Selected template:", selectedTemplate);
+    console.log("Placeholder element:", placeholder);
+    console.log("Placeholder display:", placeholder?.style.display);
+
+    if (!selectedTemplate) {
+      console.log("No template selected, clearing placeholder");
+      // Clear the ready to generate area if no template is selected
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div class="post-content" style="display: flex !important; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px !important; min-height: 300px; background: #fafafa !important; border-radius: 6px; margin: 0 !important; white-space: normal !important;">
+            <h3 style="margin: 0 0 20px 0; color: rgb(139, 92, 246); font-size: 18px;">📝 Ready to Craft</h3>
+            <p style="font-size: 16px; margin: 0 0 25px 0; color: #666; line-height: 1.5;">
+              Fill in the form on the left and click "Craft Post" to<br>
+              create your content.
+            </p>
+            <div style="font-size: 48px; margin: 0 0 25px 0; opacity: 0.6;">✨</div>
+            <p style="font-size: 14px; color: #888; margin: 0;">
+              Your crafted post will appear here
+            </p>
+          </div>
+        `;
+        placeholder.style.display = "block";
+      }
+      return;
+    }
+
+    // Get the selected template's sample format
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+      const template = templates[selectedTemplate];
+
+      console.log("Storage result:", result);
+      console.log("Templates object:", templates);
+      console.log("Template found:", template);
+      console.log("Template keys:", Object.keys(templates));
+
+      if (template && template.sampleFormat && placeholder) {
+        console.log("Sample format length:", template.sampleFormat.length);
+        console.log(
+          "Sample format preview:",
+          template.sampleFormat.substring(0, 100) + "..."
+        );
+
+        // Format the sample format to preserve line breaks and formatting
+        const formattedContent = template.sampleFormat
+          .replace(/\n/g, "<br>")
+          .replace(/\s{2,}/g, "&nbsp;&nbsp;"); // Preserve multiple spaces
+
+        console.log(
+          "Formatted content preview:",
+          formattedContent.substring(0, 100) + "..."
+        );
+
+        // Display the template format in the ready to generate area
+        placeholder.innerHTML = `
+          <h3>📝 Ready to Craft</h3>
+          <div class="post-content" style="padding: 20px; background: #fafafa; border-radius: 8px;">
+            <div class="template-preview">
+              <div class="template-title" style="font-weight: 600; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
+                📋 Template: ${selectedTemplate}
+              </div>
+              <div class="template-content" style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444;">
+                ${formattedContent}
+              </div>
+            </div>
+          </div>
+        `;
+        placeholder.style.display = "block";
+
+        console.log("Template preview displayed successfully");
+        console.log(
+          "Placeholder innerHTML length:",
+          placeholder.innerHTML.length
+        );
+
+        // Show notification that template is loaded
+        this.showNotification(
+          `✅ Template "${selectedTemplate}" loaded!`,
+          "success"
+        );
+      } else {
+        console.log("❌ Template or sampleFormat not found:", {
+          hasTemplate: !!template,
+          hasSampleFormat: !!template?.sampleFormat,
+          hasPlaceholder: !!placeholder,
+        });
+      }
+    });
+  }
+
+  createTemplateCard(templateName, template) {
+    const card = document.createElement("div");
+    card.className = "template-card";
+
+    // Check if this is the default template
+    const isDefaultTemplate = templateName === defaultTemplate.name;
+
+    card.innerHTML = `
+      <div class="template-header">
+        <h3 class="template-name">${templateName}</h3>
+        ${
+          isDefaultTemplate
+            ? '<span class="default-badge" style="background: #28a745; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; margin-left: 10px;">Default</span>'
+            : ""
+        }
+      </div>
+      <div class="form-group">
+        <label>Sample Format:</label>
+        <textarea class="template-sample-format" data-template="${templateName}" rows="8">${
+      template.sampleFormat
+    }</textarea>
+      </div>
+      <div class="template-actions">
+        <button class="btn btn-primary save-template" data-template="${templateName}">Save</button>
+        ${
+          isDefaultTemplate
+            ? `<button class="btn btn-secondary reset-template" data-template="${templateName}">Reset</button>`
+            : `<button class="btn btn-danger delete-template" data-template="${templateName}">Delete</button>`
+        }
+      </div>
+    `;
+
+    // Add event listeners
+    const saveBtn = card.querySelector(".save-template");
+    saveBtn.addEventListener("click", () => {
+      this.saveTemplate(templateName);
+    });
+
+    if (isDefaultTemplate) {
+      const resetBtn = card.querySelector(".reset-template");
+      resetBtn.addEventListener("click", () => {
+        this.resetTemplate(templateName);
+      });
+    } else {
+      const deleteBtn = card.querySelector(".delete-template");
+      deleteBtn.addEventListener("click", () => {
+        this.deleteTemplate(templateName);
+      });
+    }
+
+    return card;
+  }
+
+  useTemplate(templateName, template) {
+    // Switch to create post panel and populate the topic field with the template format
+    this.switchPanel("create-post");
+
+    // Populate the topic field with the sample format
+    document.getElementById("topic").value = template.sampleFormat;
+    this.updateCharacterCount();
+
+    this.showNotification(
+      `✅ Template "${templateName}" applied! You can now modify the content and generate your post.`,
+      "success"
+    );
+  }
+
+  editTemplate(templateName, template) {
+    // Set editing state
+    this.editingTemplateName = templateName;
+
+    // Switch to templates panel first
+    this.switchPanel("templates");
+
+    // Populate the form with template data
+    document.getElementById("templateName").value = templateName;
+    document.getElementById("sampleFormat").value = template.sampleFormat || "";
+    this.updateSampleFormatCount();
+
+    // Switch to create template tab
+    this.switchTemplateTab("create-template");
+
+    // Update button text
+    this.updateCreateButton();
+
+    // Scroll to the form
+    setTimeout(() => {
+      document
+        .getElementById("templateName")
+        .scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }
+
+  updateCreateButton() {
+    const createBtn = document.getElementById("createTemplateBtn");
+    if (createBtn) {
+      if (this.editingTemplateName) {
+        createBtn.textContent = "Update Template";
+        createBtn.className = "btn btn-success";
+      } else {
+        createBtn.textContent = "Create Template";
+        createBtn.className = "btn btn-success";
+      }
+    }
+  }
+
+  deleteTemplate(templateName) {
+    if (
+      confirm(`Are you sure you want to delete the template "${templateName}"?`)
+    ) {
+      chrome.storage.local.get(["templates"], (result) => {
+        const templates = result.templates || {};
+        delete templates[templateName];
+
+        chrome.storage.local.set({ templates }, () => {
+          this.updateTemplatesGrid();
+          this.updateWritingStyleDropdown();
+          this.showNotification(
+            `✅ Template "${templateName}" deleted successfully!`,
+            "success"
+          );
+        });
+      });
+    }
+  }
+
+  saveTemplate(templateName) {
+    const card = document
+      .querySelector(`[data-template="${templateName}"]`)
+      .closest(".template-card");
+    const sampleFormat = card.querySelector(".template-sample-format").value;
+
+    chrome.storage.local.get(["templates"], (result) => {
+      const templates = result.templates || {};
+
+      // Update the template with new content
+      templates[templateName] = {
+        name: templateName,
+        sampleFormat: sampleFormat,
+        createdAt: new Date().toISOString(),
+      };
+
+      chrome.storage.local.set({ templates }, () => {
+        this.updateWritingStyleDropdown();
+        this.showNotification(
+          `✅ Template "${templateName}" saved successfully!`,
+          "success"
+        );
+      });
+    });
+  }
+
+  resetTemplate(templateName) {
+    if (templateName === defaultTemplate.name) {
+      if (
+        confirm(`Are you sure you want to reset "${templateName}" to default?`)
+      ) {
+        chrome.storage.local.get(["templates"], (result) => {
+          const templates = result.templates || {};
+
+          // Reset to default
+          templates[templateName] = {
+            name: defaultTemplate.name,
+            sampleFormat: defaultTemplate.sampleFormat,
+            createdAt: new Date().toISOString(),
+          };
+
+          chrome.storage.local.set({ templates }, () => {
+            this.updateTemplatesGrid();
+            this.updateWritingStyleDropdown();
+            this.showNotification(
+              `✅ Template "${templateName}" reset to default!`,
+              "success"
+            );
+          });
+        });
+      }
+    } else {
+      this.showNotification(`Only default templates can be reset.`, "info");
+    }
+  }
+
+  escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  showNotification(message, type = "info") {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll(".notification");
+    existingNotifications.forEach((notification) => notification.remove());
+
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+      <div class="notification-content">
+        <span class="notification-message">${message}</span>
+        <button class="notification-close">&times;</button>
+      </div>
+    `;
+
+    // Add styles
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${
+        type === "success"
+          ? "#d4edda"
+          : type === "error"
+          ? "#f8d7da"
+          : "#d1ecf1"
+      };
+      color: ${
+        type === "success"
+          ? "#155724"
+          : type === "error"
+          ? "#721c24"
+          : "#0c5460"
+      };
+      border: 1px solid ${
+        type === "success"
+          ? "#c3e6cb"
+          : type === "error"
+          ? "#f5c6cb"
+          : "#bee5eb"
+      };
+      border-radius: 8px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 10000;
+      max-width: 400px;
+      font-size: 14px;
+      font-weight: 500;
+      animation: slideIn 0.3s ease-out;
+    `;
+
+    // Add animation styles
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+      .notification-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .notification-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        padding: 0;
+        line-height: 1;
+      }
+      .notification-close:hover {
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Add to page
+    document.body.appendChild(notification);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+
+    // Close button functionality
+    const closeBtn = notification.querySelector(".notification-close");
+    closeBtn.addEventListener("click", () => {
+      notification.remove();
+    });
+  }
+
+  initSubmenuStates() {
+    // Set Templates submenu to collapsed by default
+    const templatesNavItem = document.querySelector('[data-panel="templates"]');
+    if (templatesNavItem) {
+      const submenu = templatesNavItem.nextElementSibling;
+      if (submenu && submenu.classList.contains("nav-submenu")) {
+        submenu.classList.add("collapsed");
+      }
+    }
+
+    // Set Tone Setup submenu to collapsed by default
+    const toneSetupNavItem = document.querySelector(
+      '[data-panel="tone-setup"]'
+    );
+    if (toneSetupNavItem) {
+      const submenu = toneSetupNavItem.nextElementSibling;
+      if (submenu && submenu.classList.contains("nav-submenu")) {
+        submenu.classList.add("collapsed");
+      }
     }
   }
 }
