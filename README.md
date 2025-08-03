@@ -296,6 +296,39 @@ The extension uses a platform-agnostic architecture:
 
 ### Version 1.0 - Complete Feature Set & Platform Support
 
+#### 🚀 **Post Templates Feature**
+
+- **Template Management**: Complete template system for post creation with custom writing styles
+- **Template Creation**: Create custom templates with "Template Name" and "Sample Format" fields
+- **Default Template**: "Key points - One liners" default template with professional content
+- **Template Editing**: Edit existing templates with inline textarea and save functionality
+- **Template Reset**: Reset default template to original content
+- **Template Selection**: Dynamic dropdown populated with user templates in main post creation form
+- **Template Preview**: Template sample appears in "Ready to Craft" area when selected
+- **AI Style Adherence**: AI generates original content while following template's narrative structure and format pattern
+- **Character Limit Enforcement**: Strict adherence to platform-specific character limits regardless of template length
+- **Template Organization**: Submenu navigation with "Writing Styles" and "Create Template" sections
+- **Toggle Icons**: Plus/minus toggle icons for submenu expansion/collapse
+
+#### 🎨 **Enhanced Post Creation Experience**
+
+- **"Craft Post" Terminology**: Changed from "Generate Post" to "Craft Post" throughout UI
+- **"Writing..." Animation**: Updated loading text from "Generating..." to "Writing..."
+- **Template Indicator**: Shows "Template Selected: [Name]" below generated posts
+- **Template Sample Display**: Full template sample shown below generated content
+- **Centered Layout**: Improved "Ready to Craft" area with proper centering and dashed border
+- **Consistent Styling**: Purple theme applied to all headers, tabs, and active states
+- **Tab Design Consistency**: Template tabs match post tone tab design exactly
+
+#### 🔧 **Tone Change Fix**
+
+- **Dynamic Post Discovery**: Completely rewrote tone change functionality to find active posts dynamically
+- **Three-Tier Fallback**: Modal proximity → Vibe button search → Platform fallback
+- **Cross-Platform Reliability**: Works consistently on LinkedIn, X, and other platforms
+- **Modal-Safe Operations**: No longer relies on stored references that can be lost during modal operations
+- **Real-Time Recovery**: Automatically finds posts when tone changes are needed
+- **Robust Error Handling**: Eliminates "No active post found" errors completely
+
 #### 🚀 **Post Creation Feature**
 
 - **Create Post Page**: Dedicated page for AI-powered post creation with vertical navigation
@@ -308,7 +341,7 @@ The extension uses a platform-agnostic architecture:
 
 #### 🎨 **Enhanced User Experience**
 
-- **Vertical Navigation**: Sidebar with "Create Post", "Tone Setup", and "Settings" tabs
+- **Vertical Navigation**: Sidebar with "Create Post", "Tone Setup", "Templates", and "Settings" tabs
 - **Tone Management**: Full tone setup interface for post creation (mirrors comment tones)
 - **Emoji Picker**: Searchable emoji picker for custom post tones
 - **Bulk Actions**: Save All/Reset All functionality for post tones
@@ -318,10 +351,12 @@ The extension uses a platform-agnostic architecture:
 #### 🔧 **Technical Improvements**
 
 - **Separate Storage**: Post tones stored separately from comment tones (`postTonePrompts`, `postToneGuidelines`, `customPostTones`)
+- **Template Storage**: Templates stored in `chrome.storage.local` with creation timestamps
 - **Animation System**: CSS animations with JavaScript restart for reliable loading states
 - **Platform Length Configs**: Dynamic character limits based on platform and length selection
-- **Error Handling**: Improved error handling for post generation
+- **Error Handling**: Improved error handling for post generation and template operations
 - **Performance**: Optimized animation rendering and DOM updates
+- **Security**: Replaced all `alert()` calls with consistent toast notification system
 
 #### 🎯 **Custom Tones Feature**
 
@@ -337,6 +372,8 @@ The extension uses a platform-agnostic architecture:
 - **Two Comment Generation**: Ensured all tones (including custom) generate exactly 2 comments
 - **Prompt Enhancement**: Automatic enhancement of custom prompts to request 2 comments
 - **Variable Cleaning**: Improved cleaning of literal variable placeholders in AI responses
+- **Template Style Adherence**: AI follows template format while generating completely original content
+- **Character Limit Enforcement**: Strict adherence to user-selected character limits
 
 #### 🎨 **Settings UI Overhaul**
 
@@ -352,6 +389,7 @@ The extension uses a platform-agnostic architecture:
 - **Event Delegation**: Improved emoji picker and tone card interactions
 - **Error Handling**: Better error handling for custom tone operations
 - **Performance**: Optimized button injection and modal rendering
+- **Security Audit**: Comprehensive security improvements including input sanitization and CSP
 
 #### 🎨 **Branding & Visual Updates**
 

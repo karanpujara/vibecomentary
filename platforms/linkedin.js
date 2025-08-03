@@ -106,10 +106,14 @@ class LinkedInPlatform extends BasePlatform {
       fullName = this.findNameInPostHeader(post);
     }
 
-    // Final validation: make sure we didn't pick up engagement text
-    if (fullName && this.containsEngagementText(fullName)) {
+    // Final validation: make sure we didn't pick up engagement text or tagged names
+    if (
+      fullName &&
+      (this.containsEngagementText(fullName) ||
+        this.containsTaggedNames(fullName))
+    ) {
       this.log(
-        `⚠️ Name contains engagement text, trying alternative extraction...`
+        `⚠️ Name contains engagement text or tagged names, trying alternative extraction...`
       );
       fullName = this.findAlternativeAuthorName(post);
     }
@@ -129,6 +133,19 @@ class LinkedInPlatform extends BasePlatform {
     ];
 
     return engagementPatterns.some((pattern) => pattern.test(text));
+  }
+
+  containsTaggedNames(text) {
+    // Check if the text contains LinkedIn-style mentions (names with @ or special formatting)
+    const taggedPatterns = [
+      /@\w+/, // @username patterns
+      /\b[A-Z][a-z]+ [A-Z][a-z]+\b.*\b[A-Z][a-z]+ [A-Z][a-z]+\b/, // Multiple names in sequence
+      /mentioned\s+/, // "mentioned" text
+      /tagged\s+/, // "tagged" text
+      /with\s+/, // "with" followed by names
+    ];
+
+    return taggedPatterns.some((pattern) => pattern.test(text));
   }
 
   findAlternativeAuthorName(post) {
@@ -223,53 +240,70 @@ class LinkedInPlatform extends BasePlatform {
   }
 
   findNameInPostHeader(post) {
-    this.log("🔄 Trying fallback author name extraction...");
+    this.log("🔍 Looking for author name in post header...");
 
-    // Look for the most likely author elements first
-    const prioritySelectors = [
-      // Look for profile links that indicate the post author
-      "a[href*='/in/']",
-      ".feed-shared-actor a[href*='/in/']",
-      ".post-author a[href*='/in/']",
-
-      // Look for elements with specific classes that indicate author
+    // Look for the most specific author selectors first
+    const specificSelectors = [
+      // LinkedIn's specific author selectors
+      ".update-components-actor__title",
       ".feed-shared-actor__name",
-      ".post-author",
-      ".author-name",
+      ".feed-shared-actor__name-link",
+      '[data-test-id="post-author"]',
+      '[data-test-id="author-name"]',
+
+      // More general selectors
+      ".feed-shared-actor a",
+      ".update-components-actor a",
     ];
 
-    for (const selector of prioritySelectors) {
-      const elements = post.querySelectorAll(selector);
-      for (const element of elements) {
+    for (const selector of specificSelectors) {
+      const element = post.querySelector(selector);
+      if (element) {
         const text = element.textContent?.trim();
-        if (text && this.isValidAuthorName(text)) {
+        if (
+          text &&
+          this.isValidAuthorName(text) &&
+          !this.containsEngagementText(text) &&
+          !this.containsTaggedNames(text)
+        ) {
           this.log(
-            `✅ Found author name with priority selector ${selector}: "${text}"`
+            `✅ Found author name in header with selector ${selector}: "${text}"`
           );
           return text;
         }
       }
     }
 
-    // Fallback: look for any text that looks like a name
-    const headerElements = post.querySelectorAll("a, span, div, strong, b");
+    // If no specific author found, look for the first valid name in the actor area
+    const actorArea =
+      post.querySelector(".update-components-actor") ||
+      post.querySelector(".feed-shared-actor") ||
+      post;
 
-    for (const element of headerElements) {
-      const text = element.textContent?.trim();
-      if (
-        text &&
-        text.length > 2 &&
-        text.length < 50 &&
-        /^[A-Z][a-z]+/.test(text) &&
-        this.isValidAuthorName(text)
-      ) {
-        this.log(`✅ Found author name in fallback: "${text}"`);
-        return text;
+    if (actorArea) {
+      // Look for text elements that could be names
+      const textElements = actorArea.querySelectorAll(
+        "a, span, div, strong, b"
+      );
+
+      for (const element of textElements) {
+        const text = element.textContent?.trim();
+        if (
+          text &&
+          this.isValidAuthorName(text) &&
+          !this.containsEngagementText(text) &&
+          !this.containsTaggedNames(text) &&
+          text.length > 2 &&
+          text.length < 50
+        ) {
+          this.log(`✅ Found valid author name in actor area: "${text}"`);
+          return text;
+        }
       }
     }
 
-    this.log("❌ No valid author name found in fallback");
-    return "";
+    this.log("❌ No valid author name found in post header");
+    return "the author";
   }
 
   processAuthorName(fullName) {

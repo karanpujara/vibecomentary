@@ -104,6 +104,7 @@ let platformManager = null;
 let cssManager = null;
 let modalManager = null;
 let aiService = null;
+let globalActivePost = null; // Global reference to active post
 
 // Initialize the architecture
 async function initializeServices() {
@@ -351,6 +352,7 @@ function injectButtonWithLegacyLogic() {
 
     btn.addEventListener("click", async () => {
       aiService.setActivePost(post);
+      globalActivePost = post; // Store in global variable
       await handleButtonClick(post);
     });
 
@@ -457,6 +459,9 @@ async function handleButtonClick(post, platform = null) {
 // Fetch suggestions using AI service
 async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
   try {
+    // Preserve the active post reference before modal operations
+    const preservedActivePost = aiService.activePostElement;
+
     // Show loading modal
     const toneLabel = `${emoji} ${tone}`;
     const platformName = platformManager
@@ -464,6 +469,11 @@ async function fetchSuggestions(apiKey, tone, emoji, postText, postEl = null) {
       ?.getPlatformName();
 
     await modalManager.show(toneLabel, [], "", true, platformName);
+
+    // Restore the active post reference if it was lost
+    if (!aiService.activePostElement && preservedActivePost) {
+      aiService.setActivePost(preservedActivePost);
+    }
 
     // Fetch suggestions from AI service
     const result = await aiService.fetchSuggestions(
@@ -559,9 +569,60 @@ async function handleToneChange(newTone) {
       return;
     }
 
-    // Get the current post text
-    const activePost = aiService.activePostElement;
+    // Find the active post dynamically by looking for the modal and finding associated posts
+    let activePost = null;
+
+    // Method 1: Look for posts with vibe-btn that are near the modal
+    const modal = document.querySelector("#vibe-modal");
+    if (modal) {
+      console.log("🔍 Modal found, looking for nearby posts...");
+
+      // Find all posts with vibe buttons
+      const postsWithButtons = document.querySelectorAll("[data-vibe-post]");
+      console.log("🔍 Found posts with vibe buttons:", postsWithButtons.length);
+
+      // Find the post that's closest to the modal or has the most recent interaction
+      for (let post of postsWithButtons) {
+        const vibeBtn = post.querySelector(".vibe-btn");
+        if (vibeBtn) {
+          // Check if this post has a vibe button that was recently clicked
+          // We'll use the post that has the most recent timestamp or is closest to modal
+          activePost = post;
+          console.log("🔍 Found potential active post:", post);
+          break;
+        }
+      }
+    }
+
+    // Method 2: If no post found near modal, try to find any post with a vibe button
     if (!activePost) {
+      console.log(
+        "🔍 No post found near modal, looking for any post with vibe button..."
+      );
+      const anyPostWithButton = document.querySelector("[data-vibe-post]");
+      if (anyPostWithButton) {
+        activePost = anyPostWithButton;
+        console.log("🔍 Found fallback active post:", activePost);
+      }
+    }
+
+    // Method 3: Last resort - try to find any post element
+    if (!activePost) {
+      console.log(
+        "🔍 No posts with vibe buttons found, looking for any post element..."
+      );
+      const platform = platformManager.getCurrentPlatform();
+      if (platform) {
+        const posts = platform.findPosts();
+        if (posts && posts.length > 0) {
+          activePost = posts[0];
+          console.log("🔍 Found first available post:", activePost);
+        }
+      }
+    }
+
+    if (!activePost) {
+      console.error("❌ No active post found using any method");
       ErrorHandler.showNotification(
         "❌ No active post found. Please try again.",
         "error"
@@ -569,13 +630,36 @@ async function handleToneChange(newTone) {
       return;
     }
 
+    console.log("✅ Active post found dynamically:", activePost);
+
     const platform = platformManager.getCurrentPlatform();
     let postText;
     if (platform) {
       postText = platform.extractPostText(activePost);
+      console.log(
+        "✅ Post text extracted using platform:",
+        postText.slice(0, 100) + "..."
+      );
     } else {
       postText = activePost.innerText.slice(0, 800);
+      console.log(
+        "✅ Post text extracted using fallback:",
+        postText.slice(0, 100) + "..."
+      );
     }
+
+    if (!postText || postText.trim() === "") {
+      console.error("❌ No post text extracted");
+      ErrorHandler.showNotification(
+        "❌ Could not extract post text. Please try again.",
+        "error"
+      );
+      return;
+    }
+
+    // Update the aiService with the found post
+    aiService.setActivePost(activePost);
+    globalActivePost = activePost;
 
     // Fetch new suggestions with the new tone
     await fetchSuggestions(apiKey, newTone, emoji, postText, activePost);

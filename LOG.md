@@ -86,6 +86,7 @@ be-visible/
 - `postToneGuidelines`: Custom guidelines for post tones
 - `customPostTones`: User-created post tones
 - `createPostModel`: Selected AI model for post creation
+- `templates`: User-created post templates with sample formats
 
 **Shared Storage Keys:**
 
@@ -95,6 +96,111 @@ be-visible/
 ## 📝 Development History
 
 ### Version 1.0 - Complete Feature Set & Platform Support (Current)
+
+#### 🚀 Post Templates Feature Implementation
+
+**Template Management System**
+
+- **Files Updated**: `create.html`, `create.js`
+- **Features**:
+  - Complete template system for post creation with custom writing styles
+  - Template creation with "Template Name" and "Sample Format" fields
+  - Default template "Key points - One liners" with professional content
+  - Template editing with inline textarea and save functionality
+  - Template reset capability for default template
+  - Dynamic dropdown populated with user templates in main post creation form
+  - Template preview in "Ready to Craft" area when selected
+  - AI style adherence - generates original content while following template's narrative structure
+  - Character limit enforcement regardless of template length
+  - Submenu navigation with "Writing Styles" and "Create Template" sections
+  - Plus/minus toggle icons for submenu expansion/collapse
+
+**Template Storage Architecture**
+
+- **Storage Key**: `templates` in `chrome.storage.local`
+- **Structure**: Object with template names as keys
+- **Properties**: `name`, `sampleFormat`, `createdAt`
+- **Default Template**: "Key points - One liners" with professional content
+- **Integration**: Templates included in export/import functionality
+
+**Template Creation Interface**
+
+- **Form Fields**: Template Name (text input), Sample Format (textarea, 3000 char limit)
+- **Validation**: Name uniqueness, format length requirements
+- **UI**: Centered form with clear labels and character counter
+- **Actions**: Create Template, Clear Form, Update Template (when editing)
+
+**Template Management Interface**
+
+- **Writing Styles Tab**: Displays all templates in editable card format
+- **Create Template Tab**: Form for creating new templates + list of custom templates
+- **Card Design**: Template name, editable textarea, action buttons
+- **Default Template**: Special handling with "Default" badge and Reset button
+- **Custom Templates**: Save and Delete buttons only
+
+**AI Template Integration**
+
+- **Style Adherence**: AI follows template's narrative structure and format pattern
+- **Original Content**: Generates completely original content, not copying template words
+- **Character Limits**: Strict adherence to platform-specific limits regardless of template length
+- **Prompt Engineering**: Detailed instructions for format following without content copying
+
+**Submenu Navigation System**
+
+- **Implementation**: Collapsible submenu under "Templates" main item
+- **Toggle Icons**: Plus (+) when collapsed, minus (-) when expanded
+- **Smooth Animation**: CSS transitions for expand/collapse
+- **Default State**: Submenus collapsed by default on page load
+
+#### 🎨 Enhanced Post Creation Experience
+
+**Terminology Updates**
+
+- **"Craft Post"**: Changed from "Generate Post" throughout UI
+- **"Writing..." Animation**: Updated loading text from "Generating..." to "Writing..."
+- **"Ready to Craft"**: Updated placeholder area text and styling
+
+**Template Display Features**
+
+- **Template Indicator**: Shows "Template Selected: [Name]" below generated posts
+- **Template Sample Display**: Full template sample shown below generated content
+- **Preview Area**: Template sample appears in "Ready to Craft" area when selected
+- **Post-Generation**: Template sample moves below generated content
+
+**UI/UX Improvements**
+
+- **Centered Layout**: Improved "Ready to Craft" area with proper centering and dashed border
+- **Consistent Styling**: Purple theme applied to all headers, tabs, and active states
+- **Tab Design Consistency**: Template tabs match post tone tab design exactly
+- **CSS Conflict Resolution**: Used `!important` declarations to override existing styles
+
+#### 🔧 Tone Change Fix Implementation
+
+**Dynamic Post Discovery System**
+
+- **Problem**: Active post references lost during modal operations
+- **Solution**: Three-tier fallback system for finding posts dynamically
+- **Implementation**: Complete rewrite of `handleToneChange()` function
+
+**Three-Tier Fallback Strategy**
+
+1. **Modal Proximity**: Find posts with `[data-vibe-post]` attribute near the modal
+2. **Vibe Button Search**: Find any post with `.vibe-btn` element
+3. **Platform Fallback**: Use platform manager to find any available posts
+
+**Cross-Platform Reliability**
+
+- **LinkedIn**: Works consistently with LinkedIn's post structure
+- **X (Twitter)**: Reliable on X's interface
+- **Other Platforms**: Extensible to any platform with vibe buttons
+- **Modal-Safe**: No longer relies on stored references that can be lost
+
+**Technical Implementation**
+
+- **Global Reference**: Added `globalActivePost` variable as backup
+- **Dynamic Discovery**: Real-time post finding when tone changes needed
+- **Automatic Recovery**: Updates both aiService and global references
+- **Robust Error Handling**: Eliminates "No active post found" errors completely
 
 #### 🚀 Post Creation Feature Implementation
 

@@ -4,11 +4,11 @@
  */
 class AIService {
   constructor() {
-    this.activePost = null;
+    this.activePostElement = null;
   }
 
   setActivePost(post) {
-    this.activePost = post;
+    this.activePostElement = post;
   }
 
   async getSelectedModel() {
