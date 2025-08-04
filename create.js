@@ -119,8 +119,10 @@ class CreatePostManager {
     this.setupEventListeners();
     this.loadUserProfile();
     this.updateToneDropdown();
-    this.updateWritingStyleDropdown();
-    this.initTemplates();
+    this.initTemplates().then(() => {
+      // Update dropdown after templates are initialized
+      this.updateWritingStyleDropdown();
+    });
 
     // Initialize submenu states
     this.initSubmenuStates();
@@ -221,6 +223,58 @@ class CreatePostManager {
     document.getElementById("regenerateBtn").addEventListener("click", () => {
       this.generatePost();
     });
+
+    // Post content textarea - update character count as user edits
+    const postContent = document.getElementById("postContent");
+    if (postContent) {
+      postContent.addEventListener("input", () => {
+        this.updateCharacterCount();
+      });
+    }
+
+    // Tone dropdown change - update template display
+    const toneSelect = document.getElementById("tone");
+    if (toneSelect) {
+      toneSelect.addEventListener("change", () => {
+        // Only update template content if a post is already generated
+        const postContent = document.getElementById("postContent");
+        const hasGeneratedPost =
+          postContent && postContent.value.trim().length > 0;
+
+        if (hasGeneratedPost) {
+          const selectedTemplate =
+            document.getElementById("writingStyle").value;
+          if (selectedTemplate && selectedTemplate !== "no-template") {
+            chrome.storage.local.get(["templates"], (result) => {
+              const templates = result.templates || {};
+              const template = templates[selectedTemplate];
+              if (template && template.sampleFormat) {
+                const existingTemplateSample =
+                  document.querySelector(".template-sample");
+                if (existingTemplateSample) {
+                  // Just update the content, don't create new section
+                  const formattedContent = template.sampleFormat
+                    .replace(/\n/g, "<br>")
+                    .replace(/\s{2,}/g, "&nbsp;&nbsp;");
+
+                  existingTemplateSample.innerHTML = `
+                    <div style="margin-top: 15px; padding: 15px; background: white; border: 1px solid #e9ecef; border-radius: 6px; max-height: 300px; overflow: hidden;">
+                      <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+                        📋 Template: ${selectedTemplate}
+                      </div>
+                      <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px; max-height: 220px; overflow-y: auto;">
+                        ${formattedContent}
+                      </div>
+                    </div>
+                  `;
+                }
+              }
+            });
+          }
+        }
+        // Remove the call to handleTemplateSelection() that was causing the issue
+      });
+    }
 
     // Update tone dropdown with custom tones
     this.updateToneDropdown();
@@ -424,11 +478,8 @@ class CreatePostManager {
     const tone = document.getElementById("tone").value;
     const selectedTemplate = document.getElementById("writingStyle").value;
 
-    if (!topic || !tone || !selectedTemplate) {
-      this.showNotification(
-        "Please fill in topic, tone, and select a template.",
-        "error"
-      );
+    if (!topic || !tone) {
+      this.showNotification("Please fill in topic and tone.", "error");
       return;
     }
 
@@ -466,27 +517,36 @@ class CreatePostManager {
         );
       }
 
-      // Get the selected template
-      const template = templates[selectedTemplate];
-      if (!template) {
-        throw new Error("Selected template not found.");
+      let post;
+
+      // Check if a template is selected (not placeholder and not "no-template")
+      if (
+        selectedTemplate &&
+        selectedTemplate !== "no-template" &&
+        templates[selectedTemplate]
+      ) {
+        // Get the selected template
+        const template = templates[selectedTemplate];
+        console.log("Template found:", selectedTemplate);
+
+        // Generate post using the topic content and template format
+        post = await this.createPostWithTemplate(
+          apiKey,
+          topic,
+          tone,
+          template,
+          model
+        );
+      } else {
+        // No template selected or "Don't include Template" selected
+        console.log("No template selected, generating post without template");
+        post = await this.createPostWithoutTemplate(apiKey, topic, tone, model);
       }
-
-      console.log("Template found:", selectedTemplate);
-
-      // Generate post using the topic content and template format
-      const post = await this.createPostWithTemplate(
-        apiKey,
-        topic,
-        tone,
-        template,
-        model
-      );
 
       console.log("Post generated successfully, displaying...");
 
       // Display result
-      this.displayGeneratedPost(post, selectedTemplate);
+      this.displayGeneratedPost(post, selectedTemplate || null);
     } catch (error) {
       console.error("Error generating post:", error);
       this.showNotification(`Error generating post: ${error.message}`, "error");
@@ -773,27 +833,45 @@ Generate your post about "${topic}":`;
         const template = templates[templateName];
 
         if (template && template.sampleFormat) {
-          // Format the sample format to preserve line breaks and formatting
-          const formattedContent = template.sampleFormat
-            .replace(/\n/g, "<br>")
-            .replace(/\s{2,}/g, "&nbsp;&nbsp;");
+          // Create template preview card
+          const outputSection = document.querySelector(".output-section");
+          if (outputSection) {
+            // Remove any existing template cards
+            const existingTemplateCards = outputSection.querySelectorAll(
+              ".template-preview-card"
+            );
+            existingTemplateCards.forEach((card) => card.remove());
 
-          const templateSample = document.createElement("div");
-          templateSample.className = "template-sample";
-          templateSample.innerHTML = `
-            <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px;">
+            // Create new template card
+            const templateCard = document.createElement("div");
+            templateCard.className = "template-preview-card";
+            templateCard.style.cssText = `
+              margin-top: 20px;
+              padding: 15px;
+              background: white;
+              border: 1px solid #e9ecef;
+              border-radius: 6px;
+              max-height: 300px;
+              overflow: hidden;
+            `;
+
+            // Format the sample format to preserve line breaks and formatting
+            const formattedContent = template.sampleFormat
+              .replace(/\n/g, "<br>")
+              .replace(/\s{2,}/g, "&nbsp;&nbsp;"); // Preserve multiple spaces
+
+            templateCard.innerHTML = `
               <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
                 📋 Template: ${templateName}
               </div>
-              <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px;">
+              <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px; max-height: 220px; overflow-y: auto;">
                 ${formattedContent}
               </div>
-            </div>
-          `;
+            `;
 
-          // Insert after the copy/regenerate buttons
-          const generatedPost = document.getElementById("generatedPost");
-          generatedPost.appendChild(templateSample);
+            // Add template card after the generated post
+            outputSection.appendChild(templateCard);
+          }
         }
       });
     }
@@ -801,8 +879,90 @@ Generate your post about "${topic}":`;
 
   restoreTemplateDisplay() {
     const selectedTemplate = document.getElementById("writingStyle").value;
-    if (selectedTemplate) {
-      this.handleTemplateSelection();
+    const generatedPost = document.getElementById("generatedPost");
+    const placeholder = document.getElementById("placeholder");
+    const postContent = document.getElementById("postContent");
+
+    // Check if a post has been generated (more reliable detection)
+    const hasGeneratedPost = postContent && postContent.value.trim().length > 0;
+
+    if (hasGeneratedPost) {
+      // Post has been generated, update the existing template sample
+      if (selectedTemplate && selectedTemplate !== "no-template") {
+        // Get the template sample format
+        chrome.storage.local.get(["templates"], (result) => {
+          const templates = result.templates || {};
+          const template = templates[selectedTemplate];
+
+          if (template && template.sampleFormat) {
+            // Find existing template sample
+            const existingTemplateSample =
+              document.querySelector(".template-sample");
+
+            // Format the sample format to preserve line breaks and formatting
+            const formattedContent = template.sampleFormat
+              .replace(/\n/g, "<br>")
+              .replace(/\s{2,}/g, "&nbsp;&nbsp;");
+
+            if (existingTemplateSample) {
+              // Update existing template sample
+              existingTemplateSample.innerHTML = `
+                <div style="margin-top: 15px; padding: 15px; background: white; border: 1px solid #e9ecef; border-radius: 6px; max-height: 300px; overflow: hidden;">
+                  <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+                    📋 Template: ${selectedTemplate}
+                  </div>
+                  <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px; max-height: 220px; overflow-y: auto;">
+                    ${formattedContent}
+                  </div>
+                </div>
+              `;
+            } else {
+              // Create new template sample if none exists
+              const templateSample = document.createElement("div");
+              templateSample.className = "template-sample";
+              templateSample.innerHTML = `
+                <div style="margin-top: 15px; padding: 15px; background: white; border: 1px solid #e9ecef; border-radius: 6px; max-height: 300px; overflow: hidden;">
+                  <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+                    📋 Template: ${selectedTemplate}
+                  </div>
+                  <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px; max-height: 220px; overflow-y: auto;">
+                    ${formattedContent}
+                  </div>
+                </div>
+              `;
+              generatedPost.appendChild(templateSample);
+            }
+          }
+        });
+      } else {
+        // No template selected, remove any existing template samples
+        const existingTemplateSamples =
+          document.querySelectorAll(".template-sample");
+        existingTemplateSamples.forEach((sample) => sample.remove());
+      }
+    } else {
+      // No post generated yet, update the placeholder area
+      if (selectedTemplate && selectedTemplate !== "no-template") {
+        this.handleTemplateSelection();
+      } else {
+        // Clear the placeholder if no template selected
+        if (placeholder) {
+          placeholder.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; height: 300px; background: white; border: 1px solid #e9ecef; border-radius: 6px; margin: 0;">
+              <h3 style="margin: 0 0 20px 0; color: rgb(139, 92, 246); font-size: 18px;">📝 Ready to Craft</h3>
+              <p style="font-size: 16px; margin: 0 0 25px 0; color: #666; line-height: 1.5;">
+                Fill in the form on the left and click "Craft Post" to<br>
+                create your content.
+              </p>
+              <div style="font-size: 48px; margin: 0 0 25px 0; opacity: 0.6;">✨</div>
+              <p style="font-size: 14px; color: #888; margin: 0;">
+                Your crafted post will appear here
+              </p>
+            </div>
+          `;
+          placeholder.style.display = "block";
+        }
+      }
     }
   }
 
@@ -847,28 +1007,47 @@ Generate your post about "${topic}":`;
   }
 
   showLoading(show) {
-    const loading = document.getElementById("loading");
     const generateBtn = document.getElementById("generateBtn");
     const placeholder = document.getElementById("placeholder");
-    const loadingAnimation = document.getElementById("loadingAnimation");
     const generatedPost = document.getElementById("generatedPost");
 
     if (show) {
-      loading.style.display = "block";
-      loadingAnimation.style.display = "block";
       generateBtn.disabled = true;
       generateBtn.textContent = "⏳ Crafting...";
       generateBtn.onclick = () => this.stopLoading(); // Allow canceling
-      // Don't hide placeholder - keep template sample visible
-      // placeholder.style.display = "none";
+
+      // Replace placeholder content with loading animation instead of hiding
+      if (placeholder) {
+        placeholder.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; min-height: 300px; background: white; border-radius: 6px; margin: 0;">
+            <div style="font-size: 24px; color: rgb(139, 92, 246); margin-bottom: 20px;">Crafting...</div>
+            <div class="magic-writing-animation" style="margin-bottom: 20px;">
+              <div class="pencil-container">
+                <div class="pencil" style="font-size: 32px;">✏️</div>
+                <div class="pencil-trail" style="width: 60px; height: 2px; background: linear-gradient(90deg, #ff6b6b, #4ecdc4); margin: 10px auto;"></div>
+              </div>
+              <div class="sparkles" style="margin: 15px 0;">
+                <span class="sparkle" style="font-size: 20px; margin: 0 5px;">✨</span>
+                <span class="sparkle" style="font-size: 20px; margin: 0 5px;">⭐</span>
+                <span class="sparkle" style="font-size: 20px; margin: 0 5px;">💫</span>
+                <span class="sparkle" style="font-size: 20px; margin: 0 5px;">🌟</span>
+                <span class="sparkle" style="font-size: 20px; margin: 0 5px;">✨</span>
+              </div>
+            </div>
+            <p style="color: #666; font-size: 14px; margin: 0;">
+              ✨ Crafting your perfect post with AI magic ✨
+            </p>
+          </div>
+        `;
+      }
+
       generatedPost.style.display = "none";
 
       // Force restart animations
       setTimeout(() => {
-        const pencil = loadingAnimation.querySelector(".pencil");
-        const pencilTrail = loadingAnimation.querySelector(".pencil-trail");
-        const sparkles = loadingAnimation.querySelectorAll(".sparkle");
-        const writingChars = loadingAnimation.querySelectorAll(".writing-char");
+        const pencil = placeholder.querySelector(".pencil");
+        const pencilTrail = placeholder.querySelector(".pencil-trail");
+        const sparkles = placeholder.querySelectorAll(".sparkle");
 
         if (pencil) {
           pencil.style.animation = "none";
@@ -888,17 +1067,8 @@ Generate your post about "${topic}":`;
           sparkle.style.animation = `sparkleFloat 3s ease-in-out infinite`;
           sparkle.style.animationDelay = `${index * 0.5}s`;
         });
-
-        writingChars.forEach((char, index) => {
-          char.style.animation = "none";
-          char.offsetHeight; // Trigger reflow
-          char.style.animation = `charAppear 0.3s ease-in-out forwards`;
-          char.style.animationDelay = `${0.2 + index * 0.2}s`;
-        });
       }, 100);
     } else {
-      loading.style.display = "none";
-      loadingAnimation.style.display = "none";
       generateBtn.disabled = false;
       generateBtn.textContent = "✨ Craft Post";
       generateBtn.onclick = () => this.generatePost(); // Restore normal function
@@ -1682,27 +1852,34 @@ Generate your post about "${topic}":`;
   // Templates functionality
   initTemplates() {
     this.setupTemplateEventListeners();
-    this.initDefaultTemplates();
-    this.updateTemplatesGrid();
-    this.initTemplateTabSwitching();
+    return this.initDefaultTemplates().then(() => {
+      this.updateTemplatesGrid();
+      this.initTemplateTabSwitching();
+    });
   }
 
   initDefaultTemplates() {
-    chrome.storage.local.get(["templates"], (result) => {
-      const templates = result.templates || {};
+    return new Promise((resolve) => {
+      chrome.storage.local.get(["templates"], (result) => {
+        const templates = result.templates || {};
 
-      // Check if default template exists, if not add it
-      if (!templates[defaultTemplate.name]) {
-        templates[defaultTemplate.name] = {
-          name: defaultTemplate.name,
-          sampleFormat: defaultTemplate.sampleFormat,
-          createdAt: new Date().toISOString(),
-        };
+        // Check if default template exists, if not add it
+        if (!templates[defaultTemplate.name]) {
+          templates[defaultTemplate.name] = {
+            name: defaultTemplate.name,
+            sampleFormat: defaultTemplate.sampleFormat,
+            createdAt: new Date().toISOString(),
+          };
 
-        chrome.storage.local.set({ templates }, () => {
-          console.log("Default template added successfully");
-        });
-      }
+          chrome.storage.local.set({ templates }, () => {
+            console.log("Default template added successfully");
+            resolve();
+          });
+        } else {
+          console.log("Default template already exists");
+          resolve();
+        }
+      });
     });
   }
 
@@ -1947,9 +2124,15 @@ Generate your post about "${topic}":`;
       const templates = result.templates || {};
       const templateNames = Object.keys(templates);
 
-      // Clear existing options except the first placeholder
+      // Clear existing options and add placeholder as first option
       writingStyleSelect.innerHTML =
-        '<option value="">Choose a template...</option>';
+        '<option value="" disabled selected>Choose a template...</option>';
+
+      // Add "Don't include Template" option
+      const noTemplateOption = document.createElement("option");
+      noTemplateOption.value = "no-template";
+      noTemplateOption.textContent = "Don't include Template";
+      writingStyleSelect.appendChild(noTemplateOption);
 
       // Add template options
       templateNames.forEach((templateName) => {
@@ -1986,12 +2169,14 @@ Generate your post about "${topic}":`;
     console.log("Placeholder element:", placeholder);
     console.log("Placeholder display:", placeholder?.style.display);
 
-    if (!selectedTemplate) {
-      console.log("No template selected, clearing placeholder");
+    if (!selectedTemplate || selectedTemplate === "no-template") {
+      console.log(
+        "No template selected or 'Don't include Template' selected, clearing placeholder"
+      );
       // Clear the ready to generate area if no template is selected
       if (placeholder) {
         placeholder.innerHTML = `
-          <div class="post-content" style="display: flex !important; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px !important; min-height: 300px; background: #fafafa !important; border-radius: 6px; margin: 0 !important; white-space: normal !important;">
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; height: 300px; background: white; border: 1px solid #e9ecef; border-radius: 6px; margin: 0;">
             <h3 style="margin: 0 0 20px 0; color: rgb(139, 92, 246); font-size: 18px;">📝 Ready to Craft</h3>
             <p style="font-size: 16px; margin: 0 0 25px 0; color: #666; line-height: 1.5;">
               Fill in the form on the left and click "Craft Post" to<br>
@@ -2005,6 +2190,16 @@ Generate your post about "${topic}":`;
         `;
         placeholder.style.display = "block";
       }
+
+      // Remove template preview card if no template selected
+      const outputSection = document.querySelector(".output-section");
+      if (outputSection) {
+        const existingTemplateCards = outputSection.querySelectorAll(
+          ".template-preview-card"
+        );
+        existingTemplateCards.forEach((card) => card.remove());
+      }
+
       return;
     }
 
@@ -2037,31 +2232,58 @@ Generate your post about "${topic}":`;
 
         // Display the template format in the ready to generate area
         placeholder.innerHTML = `
-          <h3>📝 Ready to Craft</h3>
-          <div class="post-content" style="padding: 20px; background: #fafafa; border-radius: 8px;">
-            <div class="template-preview">
-              <div class="template-title" style="font-weight: 600; color: #333; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
-                📋 Template: ${selectedTemplate}
-              </div>
-              <div class="template-content" style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444;">
-                ${formattedContent}
-              </div>
-            </div>
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; height: 300px; background: white; border-radius: 6px; margin: 0;">
+            <h3 style="margin: 0 0 20px 0; color: rgb(139, 92, 246); font-size: 18px;">📝 Ready to Craft</h3>
+            <p style="font-size: 16px; margin: 0 0 25px 0; color: #666; line-height: 1.5;">
+              Fill in the form on the left and click "Craft Post" to<br>
+              create your content.
+            </p>
+            <div style="font-size: 48px; margin: 0 0 25px 0; opacity: 0.6;">✨</div>
+            <p style="font-size: 14px; color: #888; margin: 0;">
+              Your crafted post will appear here
+            </p>
           </div>
         `;
-        placeholder.style.display = "block";
 
-        console.log("Template preview displayed successfully");
-        console.log(
-          "Placeholder innerHTML length:",
-          placeholder.innerHTML.length
-        );
+        // Create template preview card
+        const outputSection = document.querySelector(".output-section");
+        if (outputSection) {
+          // Remove any existing template cards
+          const existingTemplateCards = outputSection.querySelectorAll(
+            ".template-preview-card"
+          );
+          existingTemplateCards.forEach((card) => card.remove());
 
-        // Show notification that template is loaded
-        this.showNotification(
-          `✅ Template "${selectedTemplate}" loaded!`,
-          "success"
-        );
+          // Create new template card
+          const templateCard = document.createElement("div");
+          templateCard.className = "template-preview-card";
+          templateCard.style.cssText = `
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            max-height: 300px;
+            overflow: hidden;
+          `;
+
+          // Format the sample format to preserve line breaks and formatting
+          const formattedContent = template.sampleFormat
+            .replace(/\n/g, "<br>")
+            .replace(/\s{2,}/g, "&nbsp;&nbsp;"); // Preserve multiple spaces
+
+          templateCard.innerHTML = `
+            <div style="font-weight: 600; color: #333; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
+              📋 Template: ${selectedTemplate}
+            </div>
+            <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #444; font-size: 14px; max-height: 220px; overflow-y: auto;">
+              ${formattedContent}
+            </div>
+          `;
+
+          // Add template card after the placeholder
+          outputSection.appendChild(templateCard);
+        }
       } else {
         console.log("❌ Template or sampleFormat not found:", {
           hasTemplate: !!template,
@@ -2383,6 +2605,159 @@ Generate your post about "${topic}":`;
         submenu.classList.add("collapsed");
       }
     }
+  }
+
+  async createPostWithoutTemplate(apiKey, topic, tone, model) {
+    try {
+      const platformName = this.getPlatformDisplayName();
+      const lengthConfig = this.getLengthConfig();
+      const characterLimit = lengthConfig.max;
+
+      console.log("Creating post without template:", {
+        platformName,
+        characterLimit,
+        model,
+        topic: topic.substring(0, 50) + "...",
+      });
+
+      const prompt = await this.buildPostPromptWithoutTemplate(
+        topic,
+        tone,
+        platformName,
+        characterLimit
+      );
+
+      console.log("Prompt built, making API call...");
+
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+      const response = await fetch(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [
+              {
+                role: "system",
+                content: `You are a professional social media content creator. Create engaging, platform-appropriate posts that follow the given tone and guidelines. Always stay within the specified character limit.`,
+              },
+              {
+                role: "user",
+                content: prompt,
+              },
+            ],
+            max_tokens: Math.min(500, Math.floor(characterLimit * 0.4)),
+            temperature: 0.7,
+          }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          `API Error: ${errorData.error?.message || "Unknown error"}`
+        );
+      }
+
+      const data = await response.json();
+      const generatedPost = data.choices[0]?.message?.content?.trim();
+
+      if (!generatedPost) {
+        throw new Error("No content generated from AI");
+      }
+
+      console.log(
+        "Post generated without template:",
+        generatedPost.substring(0, 100) + "..."
+      );
+
+      return this.cleanPostContent(generatedPost);
+    } catch (error) {
+      console.error("Error in createPostWithoutTemplate:", error);
+      if (error.name === "AbortError") {
+        throw new Error("Request timed out. Please try again.");
+      }
+      throw error;
+    }
+  }
+
+  async buildPostPromptWithoutTemplate(
+    topic,
+    tone,
+    platformName,
+    characterLimit
+  ) {
+    // Get stored post tone data
+    const result = await chrome.storage.local.get([
+      "postTonePrompts",
+      "postToneGuidelines",
+      "customPostTones",
+    ]);
+    const postTonePrompts = result.postTonePrompts || {};
+    const postToneGuidelines = result.postToneGuidelines || {};
+    const customPostTones = result.customPostTones || {};
+
+    // Get prompt and guideline for the selected tone
+    let prompt, guideline;
+
+    if (customPostTones[tone]) {
+      // Custom tone
+      prompt = customPostTones[tone].prompt;
+      guideline = customPostTones[tone].guideline;
+    } else {
+      // Default tone
+      prompt =
+        postTonePrompts[tone] ||
+        defaultPostTonePrompts[tone] ||
+        this.getToneInstructions(tone);
+      guideline =
+        postToneGuidelines[tone] || defaultPostToneGuidelines[tone] || "";
+    }
+
+    // Get length configuration
+    const lengthConfig = this.getLengthConfig();
+    const lengthSelect = document.getElementById("lengthSelect");
+    const selectedLength = lengthSelect ? lengthSelect.value : "medium";
+
+    // Determine hashtag strategy based on platform and tone
+    const hashtagStrategy = this.getHashtagStrategy(platformName, tone);
+
+    return `Create a ${selectedLength} post for ${platformName} about "${topic}".
+
+REQUIREMENTS:
+- Topic: "${topic}"
+- Tone: ${tone}
+- Platform: ${platformName}
+- Length: ${characterLimit} characters maximum
+- Format: Create engaging, readable content with appropriate line breaks
+- Content: Write original, engaging content about "${topic}"
+
+TONE GUIDELINES:
+- ${prompt}
+- ${guideline}
+
+PLATFORM STYLE: ${this.getPlatformStyle()}
+HASHTAGS: ${hashtagStrategy}
+
+INSTRUCTIONS:
+1. Write about "${topic}" using your own ideas and insights
+2. Create engaging, platform-appropriate content
+3. Use clear, readable formatting with line breaks where appropriate
+4. Follow the tone guidelines for style and approach
+5. Stay within ${characterLimit} characters
+6. Make the content compelling and shareable
+
+Generate your post about "${topic}":`;
   }
 }
 

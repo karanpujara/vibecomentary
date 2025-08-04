@@ -52,6 +52,9 @@ const defaultToneEmojis = {
 document.addEventListener("DOMContentLoaded", () => {
   // Initialize tone management (this will handle all other initializations)
   initToneManagement();
+
+  // Initialize submenu toggle functionality
+  initSubmenuToggle();
 });
 
 // Input sanitization function
@@ -123,6 +126,8 @@ function showNotification(message, type = "info") {
 
 // Initialize tone management
 function initToneManagement() {
+  console.log("Initializing tone management...");
+
   // Load custom tones
   loadCustomTones();
 
@@ -135,8 +140,15 @@ function initToneManagement() {
   // Initialize bulk actions
   initBulkActions();
 
-  // Show default tab
-  showTab("general");
+  // Initialize tones grid and show default tab after DOM is fully ready
+  setTimeout(() => {
+    console.log("Initializing tones grid on page load...");
+    updateTonesGrid();
+
+    // Show default tab after everything is loaded
+    console.log("About to show default tab: tones");
+    switchTab("tones");
+  }, 500);
 }
 
 // Create custom tone
@@ -303,73 +315,105 @@ function deleteCustomTone(toneName) {
 
 // Tab switching functionality
 function initTabSwitching() {
-  const tabs = document.querySelectorAll(".tab");
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", function () {
-      const tabName = this.getAttribute("data-tab");
-      showTab(tabName);
+  const tabButtons = document.querySelectorAll("[data-main-tab]");
+  const tabContents = document.querySelectorAll(".main-tab-content");
+
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetTab = button.getAttribute("data-main-tab");
+      switchTab(targetTab);
     });
   });
 }
 
-function showTab(tabName) {
+function switchTab(tabName) {
   console.log("Switching to tab:", tabName);
 
-  // Hide all tab contents
-  const tabContents = document.querySelectorAll(".tab-content");
+  // Remove active class from all buttons and contents
+  const tabButtons = document.querySelectorAll("[data-main-tab]");
+  const tabContents = document.querySelectorAll(".main-tab-content");
+
+  tabButtons.forEach((btn) => {
+    btn.classList.remove("active");
+    // Remove any existing underline elements
+    const underline = btn.querySelector(".main-tab-underline");
+    if (underline) {
+      underline.remove();
+    }
+  });
   tabContents.forEach((content) => content.classList.remove("active"));
 
-  // Remove active class from all tabs
-  const tabs = document.querySelectorAll(".tab");
-  tabs.forEach((tab) => tab.classList.remove("active"));
+  // Add active class to clicked button and corresponding content
+  const activeButton = document.querySelector(`[data-main-tab="${tabName}"]`);
+  const activeContent = document.getElementById(`${tabName}-main-tab`);
 
-  // Show selected tab content
-  const targetContent = document.getElementById(tabName);
-  if (targetContent) {
-    targetContent.classList.add("active");
-    console.log("Tab content activated:", tabName);
-  } else {
-    console.error("Tab content not found:", tabName);
+  if (activeButton) {
+    activeButton.classList.add("active");
+    console.log("Activated button:", tabName);
+
+    // Create a simple underline element without aggressive monitoring
+    let underline = activeButton.querySelector(".main-tab-underline");
+    if (!underline) {
+      underline = document.createElement("div");
+      underline.className = "main-tab-underline";
+      underline.style.cssText = `
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: rgb(139, 92, 246);
+        border-radius: 2px;
+        z-index: 10;
+        pointer-events: none;
+      `;
+      activeButton.appendChild(underline);
+      console.log("Created underline element for:", tabName);
+    }
   }
-
-  // Add active class to clicked tab
-  event.target.classList.add("active");
+  if (activeContent) {
+    activeContent.classList.add("active");
+    console.log(
+      "Activated content:",
+      tabName,
+      "Classes:",
+      activeContent.className
+    );
+  }
 
   // Initialize content based on tab
   if (tabName === "tones") {
-    setTimeout(() => {
-      console.log("Initializing tones tab...");
-      try {
-        if (typeof updateTonesGrid === "function") {
-          console.log("Calling updateTonesGrid...");
-          updateTonesGrid();
-        } else {
-          console.log("updateTonesGrid function not found");
-        }
-        if (typeof loadCustomTones === "function") {
-          console.log("Calling loadCustomTones...");
-          loadCustomTones();
-        } else {
-          console.log("loadCustomTones function not found");
-        }
-      } catch (error) {
-        console.error("Error initializing tones tab:", error);
+    console.log("Initializing tones tab...");
+    try {
+      if (typeof updateTonesGrid === "function") {
+        console.log("Calling updateTonesGrid...");
+        updateTonesGrid();
+      } else {
+        console.log("updateTonesGrid function not found");
       }
-    }, 100);
+      if (typeof loadCustomTones === "function") {
+        console.log("Calling loadCustomTones...");
+        loadCustomTones();
+      } else {
+        console.log("loadCustomTones function not found");
+      }
+      console.log("Tones tab content initialized successfully");
+    } catch (error) {
+      console.error("Error initializing tones tab:", error);
+    }
   } else if (tabName === "add-tone") {
-    setTimeout(() => {
-      console.log("Initializing add-tone tab...");
-      try {
-        if (typeof loadCustomTones === "function") {
-          console.log("Calling loadCustomTones for add-tone tab...");
-          loadCustomTones();
-        } else {
-          console.log("loadCustomTones function not found");
-        }
-      } catch (error) {
-        console.error("Error initializing add-tone tab:", error);
+    console.log("Initializing add-tone tab...");
+    try {
+      if (typeof loadCustomTones === "function") {
+        console.log("Calling loadCustomTones for add-tone tab...");
+        loadCustomTones();
+      } else {
+        console.log("loadCustomTones function not found");
       }
-    }, 100);
+      console.log("Add-tone tab content initialized successfully");
+    } catch (error) {
+      console.error("Error initializing add-tone tab:", error);
+    }
   }
 }
 
@@ -384,17 +428,26 @@ function updateTonesGrid() {
   console.log("Found tonesGrid element");
 
   tonesGrid.innerHTML = "";
+  console.log("Cleared tonesGrid innerHTML");
 
   // Load saved values from storage first
   chrome.storage.local.get(
     ["tonePrompts", "toneGuidelines", "customTones"],
     (result) => {
+      console.log("Storage result:", result);
       const savedPrompts = result.tonePrompts || {};
       const savedGuidelines = result.toneGuidelines || {};
       const customTones = result.customTones || {};
 
+      console.log(
+        "Default tones count:",
+        Object.keys(defaultTonePrompts).length
+      );
+      console.log("Default tones:", Object.keys(defaultTonePrompts));
+
       // Add default tones with saved values
       Object.keys(defaultTonePrompts).forEach((toneName) => {
+        console.log("Creating card for tone:", toneName);
         const card = createToneCard(
           toneName,
           savedPrompts[toneName] || defaultTonePrompts[toneName],
@@ -403,6 +456,7 @@ function updateTonesGrid() {
           "default"
         );
         tonesGrid.appendChild(card);
+        console.log("Added card for tone:", toneName);
       });
 
       // Add custom tones
@@ -1809,4 +1863,83 @@ function initEmojiPicker() {
 // Helper function to create safe IDs
 function createSafeId(prefix, toneName) {
   return `${prefix}-${toneName.replace(/[^a-zA-Z0-9]/g, "-")}`;
+}
+
+// Submenu toggle functionality
+function initSubmenuToggle() {
+  // Set submenu to expanded by default (since it's active)
+  const toneSetupNavItem = document.querySelector('[data-panel="tone-setup"]');
+  if (toneSetupNavItem) {
+    const submenu = toneSetupNavItem.nextElementSibling;
+    if (submenu && submenu.classList.contains("nav-submenu")) {
+      submenu.classList.remove("collapsed");
+      const toggle = toneSetupNavItem.querySelector(".nav-toggle");
+      if (toggle) {
+        toggle.textContent = "➖";
+        toggle.classList.add("expanded");
+      }
+    }
+  }
+
+  // Navbar navigation with toggle handling
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      // Don't trigger navigation if clicking the toggle icon
+      if (e.target.classList.contains("nav-toggle")) {
+        return;
+      }
+
+      // Handle navigation (you can add panel switching logic here if needed)
+      const panel = e.currentTarget.dataset.panel;
+      console.log("Navigating to panel:", panel);
+    });
+  });
+
+  // Toggle icon clicks for submenu visibility
+  document.querySelectorAll(".nav-toggle").forEach((toggle) => {
+    toggle.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent triggering nav-item click
+
+      const navItem = toggle.closest(".nav-item");
+      const submenu = navItem.nextElementSibling;
+
+      if (submenu && submenu.classList.contains("nav-submenu")) {
+        const isCollapsed = submenu.classList.contains("collapsed");
+
+        if (isCollapsed) {
+          // Expand submenu
+          submenu.classList.remove("collapsed");
+          toggle.textContent = "➖";
+          toggle.classList.add("expanded");
+        } else {
+          // Collapse submenu
+          submenu.classList.add("collapsed");
+          toggle.textContent = "➕";
+          toggle.classList.remove("expanded");
+        }
+      }
+    });
+  });
+
+  // Submenu navigation
+  document.querySelectorAll(".nav-submenu-item").forEach((item) => {
+    item.addEventListener("click", (e) => {
+      const panel = e.currentTarget.dataset.panel;
+      const tab = e.currentTarget.dataset.tab;
+
+      console.log("Submenu clicked:", { panel, tab });
+
+      // Add active state to the clicked submenu item
+      document.querySelectorAll(".nav-submenu-item").forEach((subItem) => {
+        subItem.classList.remove("active");
+      });
+      e.currentTarget.classList.add("active");
+
+      // Handle tab switching
+      if (tab) {
+        // Call switchTab with the tab name - let it handle all active states
+        switchTab(tab);
+      }
+    });
+  });
 }

@@ -1044,7 +1044,7 @@
 
       .post-preview-textarea {
         width: 100%;
-        min-height: 300px;
+        min-height: 500px;
         padding: 15px;
         border: 2px solid #e9ecef;
         border-radius: 8px;
@@ -1055,6 +1055,10 @@
         background-color: #fafafa;
         color: #333;
         transition: border-color 0.3s ease;
+        box-sizing: border-box;
+        max-width: 100%;
+        overflow-wrap: break-word;
+        word-wrap: break-word;
       }
 
       .post-preview-textarea:focus {
@@ -1268,6 +1272,8 @@
         border-radius: 12px;
         padding: 25px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        height: 800px;
+        overflow-y: auto;
       }
 
       .form-section h3 {
@@ -1477,7 +1483,7 @@
 
                   <div class="form-group">
                     <label for="writingStyle">📋 Select Template:</label>
-                    <select id="writingStyle" required>
+                    <select id="writingStyle">
                       <option value="">Choose a template...</option>
                       <!-- Templates will be loaded dynamically -->
                     </select>
@@ -1515,9 +1521,7 @@
                   </div>
                 </form>
 
-                <div id="loading" class="loading" style="display: none">
-                  Writing...
-                </div>
+
               </div>
 
               <div class="output-section">
@@ -1525,7 +1529,7 @@
                 <div
                   id="loadingAnimation"
                   class="generated-post"
-                  style="display: none; text-align: center; padding: 40px 20px"
+                  style="display: none; text-align: center; padding: 20px 20px; min-height: 300px; max-height: 300px; overflow: hidden;"
                 >
                   <div class="magic-writing-animation">
                     <div class="pencil-container">
@@ -1553,7 +1557,7 @@
                       <span class="writing-char">.</span>
                     </div>
                   </div>
-                  <p style="margin-top: 30px; color: #666; font-size: 14px">
+                  <p style="margin-top: 15px; color: #666; font-size: 14px">
                     ✨ Crafting your perfect post with AI magic ✨
                   </p>
                 </div>
@@ -1565,7 +1569,6 @@
                       id="postContent"
                       class="post-preview-textarea"
                       placeholder="Your generated post will appear here..."
-                      readonly
                     ></textarea>
                     <div class="post-preview-actions">
                       <div class="character-count" id="characterCount"></div>
@@ -1595,7 +1598,7 @@
                       text-align: center;
                       padding: 60px 20px !important;
                       min-height: 300px;
-                      background: #fafafa !important;
+                      background: white !important;
                       border-radius: 6px;
                       margin: 0 !important;
                       white-space: normal !important;

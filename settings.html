@@ -20,21 +20,22 @@
       }
 
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 30px;
         text-align: center;
+        margin-bottom: 30px;
+        padding: 20px 0;
+        border-bottom: 2px solid rgb(139, 92, 246);
       }
 
       .header h1 {
         margin: 0;
+        color: rgb(139, 92, 246);
         font-size: 28px;
         font-weight: 600;
       }
 
       .header p {
         margin: 10px 0 0 0;
-        opacity: 0.9;
+        color: #666;
         font-size: 16px;
       }
 
@@ -102,11 +103,36 @@
         font-size: 14px;
       }
 
+      /* Toggle icon styles */
+      .nav-toggle {
+        margin-left: auto;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+        user-select: none;
+      }
+
+      .nav-toggle:hover {
+        opacity: 0.8;
+      }
+
+      .nav-toggle.expanded {
+        transform: rotate(0deg);
+      }
+
       /* Submenu Styles */
       .nav-submenu {
         margin-left: 20px;
         border-left: 2px solid #e0e0e0;
         margin-bottom: 10px;
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .nav-submenu.collapsed {
+        max-height: 0;
+        margin-bottom: 0;
+        opacity: 0;
       }
 
       .nav-submenu-item {
@@ -159,14 +185,19 @@
         margin: 0 auto;
       }
 
-      /* Tab Styles */
-      .tabs {
+      /* Main Tab Styles - Completely New Classes */
+      .main-tab-container {
+        margin-bottom: 20px;
+      }
+
+      .main-tab-buttons {
         display: flex;
         background: #f8f9fa;
         border-bottom: 1px solid #e9ecef;
+        margin-bottom: 30px;
       }
 
-      .tab {
+      .main-tab-button {
         flex: 1;
         padding: 16px 24px;
         background: none;
@@ -177,25 +208,40 @@
         color: #6c757d;
         transition: all 0.3s ease;
         border-bottom: 3px solid transparent;
+        position: relative;
       }
 
-      .tab:hover {
+      .main-tab-button:hover {
         background: #e9ecef;
         color: #495057;
       }
 
-      .tab.active {
-        background: white;
-        color: #667eea;
-        border-bottom-color: #667eea;
+      .main-tab-button.active {
+        background: white !important;
+        color: rgb(139, 92, 246) !important;
+        border-bottom-color: rgb(139, 92, 246) !important;
+        font-weight: 600 !important;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.1) !important;
+        position: relative;
       }
 
-      .tab-content {
+      .main-tab-button.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: rgb(139, 92, 246);
+        border-radius: 2px;
+      }
+
+      .main-tab-content {
         display: none;
         padding: 30px;
       }
 
-      .tab-content.active {
+      .main-tab-content.active {
         display: block;
       }
 
@@ -531,6 +577,7 @@
         <div class="nav-item active" data-panel="tone-setup">
           <span class="nav-icon">🎭</span>
           <span class="nav-text">Tone Setup</span>
+          <span class="nav-toggle">➖</span>
         </div>
 
         <!-- Submenu for Tone Setup -->
@@ -564,13 +611,19 @@
             </p>
           </div>
 
-          <div class="tabs">
-            <button class="tab active" data-tab="tones">Tones</button>
-            <button class="tab" data-tab="add-tone">Add Tone</button>
+          <div class="main-tab-container">
+            <div class="main-tab-buttons">
+              <button class="main-tab-button active" data-main-tab="tones">
+                Tones
+              </button>
+              <button class="main-tab-button" data-main-tab="add-tone">
+                Add Tone
+              </button>
+            </div>
           </div>
 
           <!-- Tones Tab -->
-          <div id="tones" class="tab-content active">
+          <div id="tones-main-tab" class="main-tab-content active">
             <h2>🎨 Tone Management</h2>
             <p>Configure and customize your comment suggestion tones.</p>
 
@@ -599,7 +652,7 @@
           </div>
 
           <!-- Add Tone Tab -->
-          <div id="add-tone" class="tab-content">
+          <div id="add-tone-main-tab" class="main-tab-content">
             <h2>➕ Create Custom Tone</h2>
             <p>Add your own personalized tone for comment suggestions.</p>
 
