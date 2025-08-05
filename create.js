@@ -552,7 +552,14 @@ class CreatePostManager {
       ) {
         // Get the selected template
         const template = templates[selectedTemplate];
-        console.log("Template found:", selectedTemplate);
+        console.log("Template found:", {
+          selectedTemplate,
+          templateName: template.name,
+          templateSampleFormatLength: template.sampleFormat
+            ? template.sampleFormat.length
+            : 0,
+          availableTemplates: Object.keys(templates),
+        });
 
         // Generate post using the topic content and template format
         post = await this.createPostWithTemplate(
@@ -593,6 +600,13 @@ class CreatePostManager {
         characterLimit,
         model,
         topic: topic.substring(0, 50) + "...",
+        templateName: template.name,
+        templateSampleFormatLength: template.sampleFormat
+          ? template.sampleFormat.length
+          : 0,
+        templateSampleFormatPreview: template.sampleFormat
+          ? template.sampleFormat.substring(0, 200) + "..."
+          : "undefined",
       });
 
       const prompt = await this.buildPostPrompt(
@@ -623,14 +637,14 @@ class CreatePostManager {
               {
                 role: "system",
                 content:
-                  "You are an expert social media content creator. Create engaging, platform-appropriate posts that are authentic and valuable to the audience. ALWAYS respect character limits strictly.",
+                  "You are an expert social media content creator. Create engaging, platform-appropriate posts that are authentic and valuable to the audience. ALWAYS respect character limits strictly. CRITICAL: Always complete your thoughts and sentences - never leave content unfinished or cut off mid-sentence.",
               },
               {
                 role: "user",
                 content: prompt,
               },
             ],
-            max_tokens: Math.min(500, Math.floor(characterLimit * 0.4)), // Limit tokens to help enforce character limit
+            max_tokens: Math.min(Math.floor(characterLimit * 0.6), 3000), // Much more generous token limit
             temperature: 0.7,
           }),
           signal: controller.signal,
@@ -677,13 +691,32 @@ class CreatePostManager {
 
       const data = await response.json();
       console.log("API data received:", data);
+      console.log("API response details:", {
+        finishReason: data.choices?.[0]?.finish_reason,
+        usage: data.usage,
+        model: data.model,
+      });
 
       if (!data.choices || !data.choices[0] || !data.choices[0].message) {
         throw new Error("Invalid response format from OpenAI API");
       }
 
-      const generatedPost = data.choices[0].message.content.trim();
+      const rawContent = data.choices[0].message.content;
+      console.log("Raw content from API:", {
+        length: rawContent.length,
+        content: rawContent,
+        endsWithIncomplete:
+          rawContent.trim().endsWith("y") ||
+          rawContent.trim().endsWith("...") ||
+          rawContent.trim().endsWith("("),
+      });
+
+      const generatedPost = rawContent.trim();
       console.log("Post generated successfully, length:", generatedPost.length);
+      console.log(
+        "Generated post preview:",
+        generatedPost.substring(0, 500) + "..."
+      );
 
       return this.cleanPostContent(generatedPost);
     } catch (error) {
@@ -702,6 +735,18 @@ class CreatePostManager {
     platformName,
     characterLimit
   ) {
+    // Debug logging to see what template is being passed
+    console.log("🔍 buildPostPrompt called with templateFormat:", {
+      templateFormatLength: templateFormat ? templateFormat.length : 0,
+      templateFormatPreview: templateFormat
+        ? templateFormat.substring(0, 200) + "..."
+        : "undefined",
+      topic,
+      tone,
+      platformName,
+      characterLimit,
+    });
+
     // Get stored post tone data
     const result = await chrome.storage.local.get([
       "postTonePrompts",
@@ -739,18 +784,20 @@ class CreatePostManager {
 
     return `Create a ${selectedLength} post for ${platformName} about "${topic}".
 
-CRITICAL: You are writing about "${topic}". The template below is ONLY to show you the desired FORMAT (short lines, line breaks, etc.). DO NOT copy ANY words, phrases, or ideas from it.
+CRITICAL: You are writing about "${topic}". The template below shows the FORMAT STYLE you should follow (line breaks, spacing, layout), but you should write MUCH MORE CONTENT than what's shown in the template. The template is just a style guide, not a length guide.
 
-TEMPLATE FORMAT REFERENCE (for structure only):
+TEMPLATE FORMAT STYLE (for reference only):
 ${templateFormat}
 
 REQUIREMENTS:
 - Topic: "${topic}"
 - Tone: ${tone}
 - Platform: ${platformName}
-- Length: ${characterLimit} characters maximum
-- Format: Use short lines and line breaks like the template
-- Content: Write COMPLETELY ORIGINAL content about "${topic}"
+- Length: Write between ${Math.floor(
+      characterLimit * 0.7
+    )} and ${characterLimit} characters
+- Format: Follow the format style of the template above (line breaks, spacing, layout)
+- Content: Write COMPLETELY ORIGINAL content about "${topic}" in the template's style but much longer
 
 TONE GUIDELINES:
 - ${prompt}
@@ -761,12 +808,19 @@ HASHTAGS: ${hashtagStrategy}
 
 INSTRUCTIONS:
 1. Write about "${topic}" using your own ideas and insights
-2. Use short lines and line breaks for readability
+2. Follow the format style of the template (line breaks, spacing, layout)
 3. Do not copy any words, phrases, or concepts from the template
-4. Create fresh, engaging content about "${topic}"
-5. Stay within ${characterLimit} characters
+4. Create fresh, engaging content about "${topic}" in the template's style
+5. Write between ${Math.floor(
+      characterLimit * 0.7
+    )} and ${characterLimit} characters (aim for 80-95% of the limit)
+6. IMPORTANT: Match the template's formatting style
+7. CRITICAL: Your output must have similar line breaks, spacing, and visual structure as the template
+8. ESSENTIAL: Always complete your thoughts and sentences - never leave content unfinished
+9. CRITICAL: Continue writing until you reach close to ${characterLimit} characters or have fully completed your message
+10. IMPORTANT: The template is just a style guide - write much more content than shown in the template
 
-Generate your post about "${topic}":`;
+Generate your post about "${topic}" following the template format:`;
   }
 
   getToneInstructions(tone) {
@@ -2835,14 +2889,14 @@ Generate your post about "${topic}":`;
             messages: [
               {
                 role: "system",
-                content: `You are a professional social media content creator. Create engaging, platform-appropriate posts that follow the given tone and guidelines. Always stay within the specified character limit.`,
+                content: `You are a professional social media content creator. Create engaging, platform-appropriate posts that follow the given tone and guidelines. Always stay within the specified character limit. IMPORTANT: Always complete your thoughts and sentences - never leave content unfinished or cut off mid-sentence.`,
               },
               {
                 role: "user",
                 content: prompt,
               },
             ],
-            max_tokens: Math.min(500, Math.floor(characterLimit * 0.4)),
+            max_tokens: Math.min(Math.floor(characterLimit * 0.6), 3000),
             temperature: 0.7,
           }),
           signal: controller.signal,
@@ -2886,15 +2940,35 @@ Generate your post about "${topic}":`;
       }
 
       const data = await response.json();
-      const generatedPost = data.choices[0]?.message?.content?.trim();
+      console.log("API data received (no template):", data);
+      console.log("API response details (no template):", {
+        finishReason: data.choices?.[0]?.finish_reason,
+        usage: data.usage,
+        model: data.model,
+      });
 
-      if (!generatedPost) {
+      const rawContent = data.choices[0]?.message?.content;
+      console.log("Raw content from API (no template):", {
+        length: rawContent?.length || 0,
+        content: rawContent,
+        endsWithIncomplete:
+          rawContent?.trim().endsWith("y") ||
+          rawContent?.trim().endsWith("...") ||
+          rawContent?.trim().endsWith("("),
+      });
+
+      if (!rawContent) {
         throw new Error("No content generated from AI");
       }
 
+      const generatedPost = rawContent.trim();
+      console.log(
+        "Post generated without template, length:",
+        generatedPost.length
+      );
       console.log(
         "Post generated without template:",
-        generatedPost.substring(0, 100) + "..."
+        generatedPost.substring(0, 500) + "..."
       );
 
       return this.cleanPostContent(generatedPost);
@@ -2972,6 +3046,8 @@ INSTRUCTIONS:
 4. Follow the tone guidelines for style and approach
 5. Stay within ${characterLimit} characters
 6. Make the content compelling and shareable
+7. IMPORTANT: Always complete your thoughts and sentences - never leave content unfinished
+8. CRITICAL: Continue writing until you reach close to ${characterLimit} characters or have fully completed your message
 
 Generate your post about "${topic}":`;
   }
